@@ -7,7 +7,13 @@ import (
 
 func main() {
 	mux := http.NewServeMux()
-	mux.Handle("/app/", http.StripPrefix("/app", http.FileServer(http.Dir("./internal/static/"))))
+	mux.Handle(
+		"/app/",
+		http.StripPrefix(
+			"/app",
+			http.FileServer(
+				http.Dir("./internal/static/"))))
+
 	mux.HandleFunc("GET /api/health", handlerReadiness)
 
 	srv := &http.Server{
