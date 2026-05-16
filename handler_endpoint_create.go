@@ -11,15 +11,18 @@ import (
 )
 
 type Endpoint struct {
-	ID        uuid.UUID `json:"id"`
-	Name      string    `json:"name"`
-	TargetUrl string    `json:"target_url"`
-	IsActive  bool      `json:"is_active"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID           uuid.UUID `json:"id"`
+	Name         string    `json:"name"`
+	TargetUrl    string    `json:"target_url"`
+	IsActive     bool      `json:"is_active"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	GeneratedURL string    `json:"generated_url"`
 }
 
 func (cfg *apiConfig) handlerCreateEndpoint(w http.ResponseWriter, r *http.Request) {
+	BASE_URL := "https://localhost:8080"
+
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodPost {
 		respondWithError(w, http.StatusMethodNotAllowed, "Method not allowed", nil)
@@ -59,13 +62,17 @@ func (cfg *apiConfig) handlerCreateEndpoint(w http.ResponseWriter, r *http.Reque
 	}
 
 	responseEndpoint := Endpoint{
-		ID:        dbEndpoint.ID,
-		Name:      dbEndpoint.Name,
-		TargetUrl: dbEndpoint.TargetUrl,
-		IsActive:  dbEndpoint.IsActive,
-		CreatedAt: dbEndpoint.CreatedAt,
-		UpdatedAt: dbEndpoint.UpdatedAt,
+		ID:           dbEndpoint.ID,
+		Name:         dbEndpoint.Name,
+		TargetUrl:    dbEndpoint.TargetUrl,
+		IsActive:     dbEndpoint.IsActive,
+		CreatedAt:    dbEndpoint.CreatedAt,
+		UpdatedAt:    dbEndpoint.UpdatedAt,
+		GeneratedURL: "",
 	}
+
+	GeneratedURL := BASE_URL + "/webhook" + "/" + dbEndpoint.ID.String()
+	responseEndpoint.GeneratedURL = GeneratedURL
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(responseEndpoint)
