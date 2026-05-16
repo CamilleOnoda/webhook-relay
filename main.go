@@ -8,6 +8,7 @@ import (
 
 	"github.com/CamilleOnoda/webhook-relay.git/internal/database"
 	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
 
 type apiConfig struct {
