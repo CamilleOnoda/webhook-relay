@@ -29,18 +29,19 @@ type Delivery struct {
 }
 
 type WebhookEndpoint struct {
-	ID        uuid.UUID
-	Name      string
-	TargetUrl string
-	IsActive  bool
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID          uuid.UUID
+	Name        string
+	TargetUrl   string
+	IsActive    bool
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	Description sql.NullString
 }
 
 type WebhookEvent struct {
 	ID         uuid.UUID
 	EndpointID uuid.UUID
-	EventType  string
+	EventType  sql.NullString
 	Payload    json.RawMessage
 	Headers    json.RawMessage
 	ReceivedAt time.Time

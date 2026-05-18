@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 
 	"github.com/google/uuid"
@@ -20,7 +21,7 @@ RETURNING id, endpoint_id, event_type, payload, headers, received_at
 
 type CreateEventParams struct {
 	EndpointID uuid.UUID
-	EventType  string
+	EventType  sql.NullString
 	Payload    json.RawMessage
 	Headers    json.RawMessage
 }
