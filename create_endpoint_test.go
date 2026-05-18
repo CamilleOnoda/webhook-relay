@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/CamilleOnoda/webhook-relay.git/internal/database"
-	_ "github.com/jackc/pgx/v5/stdlib"
+	_ "github.com/lib/pq"
 	"github.com/pressly/goose/v3"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 )
@@ -79,7 +79,7 @@ func TestEndpointCreate(t *testing.T) {
 		t.Fatalf("failed to run migrations: %v", err)
 	}
 
-	db, err := sql.Open("pgx", connStr)
+	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		t.Fatalf("failed to create db: %v", err)
 	}
@@ -115,7 +115,7 @@ func TestEndpointCreate(t *testing.T) {
 }
 
 func runMigrations(connStr string) error {
-	db, err := sql.Open("pgx", connStr)
+	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return err
 	}
