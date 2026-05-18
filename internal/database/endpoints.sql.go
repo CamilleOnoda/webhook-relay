@@ -7,6 +7,8 @@ package database
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 const createEndpoint = `-- name: CreateEndpoint :one
@@ -32,4 +34,77 @@ func (q *Queries) CreateEndpoint(ctx context.Context, arg CreateEndpointParams) 
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const deleteAllEndpoints = `-- name: DeleteAllEndpoints :exec
+DELETE FROM webhook_endpoints
+`
+
+func (q *Queries) DeleteAllEndpoints(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, deleteAllEndpoints)
+	return err
+}
+
+const deleteEndpointByID = `-- name: DeleteEndpointByID :exec
+DELETE FROM webhook_endpoints
+WHERE id = $1
+`
+
+func (q *Queries) DeleteEndpointByID(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteEndpointByID, id)
+	return err
+}
+
+const getEndpointByID = `-- name: GetEndpointByID :one
+SELECT id, name, target_url, is_active, created_at, updated_at FROM webhook_endpoints
+WHERE id = $1
+`
+
+func (q *Queries) GetEndpointByID(ctx context.Context, id uuid.UUID) (WebhookEndpoint, error) {
+	row := q.db.QueryRowContext(ctx, getEndpointByID, id)
+	var i WebhookEndpoint
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.TargetUrl,
+		&i.IsActive,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const listEndpoints = `-- name: ListEndpoints :many
+SELECT id, name, target_url, is_active, created_at, updated_at FROM webhook_endpoints
+ORDER BY created_at DESC
+`
+
+func (q *Queries) ListEndpoints(ctx context.Context) ([]WebhookEndpoint, error) {
+	rows, err := q.db.QueryContext(ctx, listEndpoints)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []WebhookEndpoint
+	for rows.Next() {
+		var i WebhookEndpoint
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.TargetUrl,
+			&i.IsActive,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

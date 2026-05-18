@@ -6,6 +6,7 @@ package database
 
 import (
 	"database/sql"
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -34,4 +35,13 @@ type WebhookEndpoint struct {
 	IsActive  bool
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+type WebhookEvent struct {
+	ID         uuid.UUID
+	EndpointID uuid.UUID
+	EventType  string
+	Payload    json.RawMessage
+	Headers    json.RawMessage
+	ReceivedAt time.Time
 }
