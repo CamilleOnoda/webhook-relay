@@ -10,3 +10,20 @@ INSERT INTO deliveries (
     $1, $2, $3, $4, $5, $6
 )
 RETURNING *;
+
+-- name: UpdateDelivery :exec
+UPDATE deliveries
+SET 
+    status = $2,
+    status_code = $3,
+    response_body = $4,
+    error_message = $5,
+    delivery_duration_ms = $6,
+    attempted_at = NOW(),
+    attempt_count = attempt_count + 1,
+    delivered_at = CASE
+        WHEN $2 = 'success' THEN NOW()
+        ELSE delivered_at
+END
+WHERE id = $1;
+
