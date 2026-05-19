@@ -44,3 +44,38 @@ func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (Webho
 	)
 	return i, err
 }
+
+const listEvents = `-- name: ListEvents :many
+SELECT id, endpoint_id, event_type, payload, headers, received_at FROM webhook_events
+ORDER BY received_at DESC
+`
+
+func (q *Queries) ListEvents(ctx context.Context) ([]WebhookEvent, error) {
+	rows, err := q.db.QueryContext(ctx, listEvents)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []WebhookEvent
+	for rows.Next() {
+		var i WebhookEvent
+		if err := rows.Scan(
+			&i.ID,
+			&i.EndpointID,
+			&i.EventType,
+			&i.Payload,
+			&i.Headers,
+			&i.ReceivedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

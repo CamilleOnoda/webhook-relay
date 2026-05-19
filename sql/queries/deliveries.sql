@@ -27,3 +27,6 @@ SET
 END
 WHERE id = $1;
 
+-- name: ListDeliveries :many
+SELECT * FROM deliveries
+ORDER BY created_at DESC;

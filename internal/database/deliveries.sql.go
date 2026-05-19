@@ -63,6 +63,48 @@ func (q *Queries) CreateDelivery(ctx context.Context, arg CreateDeliveryParams) 
 	return i, err
 }
 
+const listDeliveries = `-- name: ListDeliveries :many
+SELECT id, event_id, target_url, status, status_code, response_body, error_message, created_at, attempted_at, delivered_at, attempt_count, next_retry_at, delivery_duration_ms FROM deliveries
+ORDER BY created_at DESC
+`
+
+func (q *Queries) ListDeliveries(ctx context.Context) ([]Delivery, error) {
+	rows, err := q.db.QueryContext(ctx, listDeliveries)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Delivery
+	for rows.Next() {
+		var i Delivery
+		if err := rows.Scan(
+			&i.ID,
+			&i.EventID,
+			&i.TargetUrl,
+			&i.Status,
+			&i.StatusCode,
+			&i.ResponseBody,
+			&i.ErrorMessage,
+			&i.CreatedAt,
+			&i.AttemptedAt,
+			&i.DeliveredAt,
+			&i.AttemptCount,
+			&i.NextRetryAt,
+			&i.DeliveryDurationMs,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateDelivery = `-- name: UpdateDelivery :exec
 UPDATE deliveries
 SET 
