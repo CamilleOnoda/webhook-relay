@@ -63,7 +63,7 @@ func (cfg *apiConfig) handlerReceiveWebhook(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	_, err = cfg.db.CreateDelivery(r.Context(), database.CreateDeliveryParams{
+	delivery, err := cfg.db.CreateDelivery(r.Context(), database.CreateDeliveryParams{
 		EventID:   event.ID,
 		TargetUrl: endpoint.TargetUrl,
 		Status:    "pending",
@@ -74,10 +74,28 @@ func (cfg *apiConfig) handlerReceiveWebhook(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	_, err = service.AttemptDelivery(r.Context(), event, endpoint.TargetUrl)
+	attemptResult, err := service.AttemptDelivery(r.Context(), event, endpoint.TargetUrl)
 	if err != nil {
 		log.Printf("failed to forward event_id=%s target_url=%s error=%v",
 			event.ID, endpoint.TargetUrl, err)
+	}
+
+	status := "success"
+	if err != nil || attemptResult.ErrorMessage.Valid {
+		status = "failed"
+	}
+
+	if err := cfg.db.UpdateDelivery(r.Context(), database.UpdateDeliveryParams{
+		ID:                 delivery.ID,
+		Status:             status,
+		StatusCode:         attemptResult.StatusCode,
+		ResponseBody:       attemptResult.ResponseBody,
+		ErrorMessage:       attemptResult.ErrorMessage,
+		DeliveryDurationMs: attemptResult.DeliveryDurationMs,
+	}); err != nil {
+		respondWithError(w, http.StatusInternalServerError,
+			"failed to update delivery record", err)
+		return
 	}
 
 	w.WriteHeader(http.StatusAccepted)
