@@ -15,6 +15,7 @@ func isUnsafeHeader(headerKey string) bool {
 		"Cookie":              true,
 		"Set-Cookie":          true,
 		"Authorization":       true,
+		"User-Agent":          true,
 	}
 	return unsfafeHeaders[headerKey]
 }
