@@ -1,0 +1,86 @@
+package main
+
+import (
+	"database/sql"
+	"encoding/json"
+	"io"
+	"log"
+	"net/http"
+
+	"github.com/CamilleOnoda/webhook-relay.git/internal/database"
+	"github.com/CamilleOnoda/webhook-relay.git/internal/service"
+	"github.com/google/uuid"
+)
+
+func (cfg *apiConfig) handlerReceiveWebhook(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-type", "application/json")
+	if r.Method != http.MethodPost {
+		respondWithError(w, http.StatusMethodNotAllowed,
+			"Method not allowed", nil)
+		return
+	}
+
+	endpointID := r.PathValue("id")
+	id, err := uuid.Parse(endpointID)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid UUID format", err)
+		return
+	}
+
+	endpoint, err := cfg.db.GetEndpointByID(r.Context(), id)
+	if err != nil {
+		respondWithError(w, http.StatusNotFound, "endpoint not found", err)
+		return
+	}
+
+	rawStream := http.MaxBytesReader(w, r.Body, 1024*1024) // limit incoming payload to max 1MB
+	defer rawStream.Close()
+
+	eventPayload, err := io.ReadAll(rawStream)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest,
+			"failed to read request body", err)
+		return
+	}
+
+	marshaledHeaders, err := json.Marshal(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError,
+			"failed to marshal headers", err)
+		return
+	}
+
+	eventType := r.Header.Get("X-Event-Type")
+	event, err := cfg.db.CreateEvent(r.Context(), database.CreateEventParams{
+		EndpointID: id,
+		EventType:  sql.NullString{String: eventType, Valid: eventType != ""},
+		Payload:    eventPayload,
+		Headers:    marshaledHeaders,
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError,
+			"failed to store event", err)
+		return
+	}
+
+	_, err = cfg.db.CreateDelivery(r.Context(), database.CreateDeliveryParams{
+		EventID:   event.ID,
+		TargetUrl: endpoint.TargetUrl,
+		Status:    "pending",
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError,
+			"failed to create delivery", err)
+		return
+	}
+
+	_, err = service.AttemptDelivery(r.Context(), event, endpoint.TargetUrl)
+	if err != nil {
+		log.Printf("failed to forward event_id=%s target_url=%s error=%v",
+			event.ID, endpoint.TargetUrl, err)
+	}
+
+	w.WriteHeader(http.StatusAccepted)
+	w.Write([]byte("event accepted successfully"))
+
+}
