@@ -62,3 +62,41 @@ func (q *Queries) CreateDelivery(ctx context.Context, arg CreateDeliveryParams) 
 	)
 	return i, err
 }
+
+const updateDelivery = `-- name: UpdateDelivery :exec
+UPDATE deliveries
+SET 
+    status = $2,
+    status_code = $3,
+    response_body = $4,
+    error_message = $5,
+    delivery_duration_ms = $6,
+    attempted_at = NOW(),
+    attempt_count = attempt_count + 1,
+    delivered_at = CASE
+        WHEN $2 = 'success' THEN NOW()
+        ELSE delivered_at
+END
+WHERE id = $1
+`
+
+type UpdateDeliveryParams struct {
+	ID                 uuid.UUID
+	Status             string
+	StatusCode         sql.NullInt32
+	ResponseBody       sql.NullString
+	ErrorMessage       sql.NullString
+	DeliveryDurationMs sql.NullInt32
+}
+
+func (q *Queries) UpdateDelivery(ctx context.Context, arg UpdateDeliveryParams) error {
+	_, err := q.db.ExecContext(ctx, updateDelivery,
+		arg.ID,
+		arg.Status,
+		arg.StatusCode,
+		arg.ResponseBody,
+		arg.ErrorMessage,
+		arg.DeliveryDurationMs,
+	)
+	return err
+}
