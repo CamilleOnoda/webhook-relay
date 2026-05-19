@@ -58,6 +58,7 @@ func AttemptDelivery(ctx context.Context, event database.WebhookEvent, targetURL
 		Timeout: 10 * time.Second,
 	}
 
+	start := time.Now()
 	resp, err := client.Do(outgoingReq)
 	if err != nil {
 		return DeliveryResult{
@@ -74,6 +75,8 @@ func AttemptDelivery(ctx context.Context, event database.WebhookEvent, targetURL
 		return DeliveryResult{}, fmt.Errorf("failed to read response body", err)
 	}
 
+	total := time.Since(start) // Full request + full response body download
+
 	respBody := sql.NullString{
 		String: string(bodyBytes),
 		Valid:  true,
@@ -82,9 +85,15 @@ func AttemptDelivery(ctx context.Context, event database.WebhookEvent, targetURL
 		Int32: int32(resp.StatusCode),
 		Valid: true,
 	}
+	duration := sql.NullInt32{
+		Int32: int32(total.Milliseconds()),
+		Valid: true,
+	}
+
 	result := DeliveryResult{
-		StatusCode:   statusCode,
-		ResponseBody: respBody,
+		StatusCode:         statusCode,
+		ResponseBody:       respBody,
+		DeliveryDurationMs: duration,
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
