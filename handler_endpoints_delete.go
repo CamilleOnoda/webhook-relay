@@ -1,12 +1,10 @@
 package main
 
 import (
-	"log"
 	"net/http"
 )
 
 func (cfg *apiConfig) handlerDeleteAllEndpoints(w http.ResponseWriter, r *http.Request) {
-	log.Println("handler matched the path")
 	if cfg.environment != "dev" {
 		respondWithError(w, http.StatusForbidden, "Forbidden", nil)
 		return
