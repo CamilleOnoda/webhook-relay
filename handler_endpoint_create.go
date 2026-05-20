@@ -50,7 +50,7 @@ func (cfg *apiConfig) handlerCreateEndpoint(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	if validURL.Scheme != "https" {
-		respondWithError(w, http.StatusBadRequest, "Target url must use https scheme", nil)
+		respondWithError(w, http.StatusBadRequest, "Target url must use HTTPS scheme", nil)
 		return
 	}
 
