@@ -99,7 +99,7 @@ This service lets you:
 
 ## Demo
 <p align="center">
-  <img src="assets/webhook-demo.gif" width="40%">
+  <img src="assets/webhook-relay-demo.gif" width="40%">
 </p>
 
 ## API features
