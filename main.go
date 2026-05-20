@@ -19,6 +19,10 @@ type apiConfig struct {
 
 func main() {
 	godotenv.Load()
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 	dbURL := os.Getenv("DB_URL")
 	env := os.Getenv("ENV")
 	baseURL := os.Getenv("BASE_URL")
@@ -49,7 +53,7 @@ func main() {
 	mux.HandleFunc("DELETE /api/endpoints/{id}", cfg.handlerDeleteEndpointByID)
 
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + port,
 		Handler: mux,
 	}
 	log.Printf("Server started on port: %v", srv.Addr)
