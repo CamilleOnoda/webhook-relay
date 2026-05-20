@@ -39,8 +39,8 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("/app/", http.StripPrefix("/app", http.FileServer(
-		http.Dir("./internal/static/"))))
+	fileServer := http.FileServer(http.Dir("./static"))
+	mux.Handle("/", fileServer)
 
 	mux.HandleFunc("GET /api/health", handlerReadiness)
 	mux.HandleFunc("GET /api/endpoints", cfg.handlerListEndpoints)
