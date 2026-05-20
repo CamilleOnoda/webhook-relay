@@ -39,7 +39,7 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	fileServer := http.FileServer(http.Dir("./static"))
+	fileServer := http.FileServer(http.Dir("./internal/static"))
 	mux.Handle("/", fileServer)
 
 	mux.HandleFunc("GET /api/health", handlerReadiness)
