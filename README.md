@@ -239,4 +239,36 @@ This project helped me better understand:
 - UUID-based routing
 - Delivery tracking and retry-oriented design
 
-[def]: ./readme-content/webhook-relay_Demo.mp4
+## Post MVP roadmap
+Improvements after the initial MVP:
+
+- Authentication and user accounts
+  - Associate endpoints with users
+  - Protect endpoint management routes
+
+- Webhook signature verification
+  - Verify incoming requests using shared secrets
+  - Reject spoofed or unauthorized webhook events
+
+- Queue-based delivery system
+  - Move delivery attempts to a background worker
+  - Avoid blocking the webhook receiver while forwarding requests
+
+- Retry logic
+  - Retry failed deliveries with backoff
+  - Track retry attempts and final delivery state
+
+- Concurrency control
+  - Limit simultaneous delivery attempts
+  - Prevent one slow target from affecting the whole service
+
+- Endpoint secrets
+  - Generate a secret per endpoint
+  - Use it for signing or validating webhook requests
+
+- Delivery filtering
+  - Allow endpoints to subscribe only to specific event types
+
+- Better observability
+  - Add structured logs
+  - Add metrics for successful and failed deliveries
