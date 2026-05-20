@@ -9,6 +9,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -46,25 +47,36 @@ func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (Webho
 }
 
 const listEvents = `-- name: ListEvents :many
-SELECT id, endpoint_id, event_type, payload, headers, received_at FROM webhook_events
-ORDER BY received_at DESC
+SELECT
+    webhook_events.id,
+    webhook_endpoints.name AS endpoint_name,
+    webhook_events.event_type,
+    webhook_events.received_at
+FROM webhook_events
+JOIN webhook_endpoints ON webhook_events.endpoint_id = webhook_endpoints.id
+ORDER BY webhook_events.received_at DESC
 `
 
-func (q *Queries) ListEvents(ctx context.Context) ([]WebhookEvent, error) {
+type ListEventsRow struct {
+	ID           uuid.UUID
+	EndpointName string
+	EventType    sql.NullString
+	ReceivedAt   time.Time
+}
+
+func (q *Queries) ListEvents(ctx context.Context) ([]ListEventsRow, error) {
 	rows, err := q.db.QueryContext(ctx, listEvents)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []WebhookEvent
+	var items []ListEventsRow
 	for rows.Next() {
-		var i WebhookEvent
+		var i ListEventsRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.EndpointID,
+			&i.EndpointName,
 			&i.EventType,
-			&i.Payload,
-			&i.Headers,
 			&i.ReceivedAt,
 		); err != nil {
 			return nil, err

@@ -28,5 +28,15 @@ END
 WHERE id = $1;
 
 -- name: ListDeliveries :many
-SELECT * FROM deliveries
-ORDER BY created_at DESC;
+SELECT 
+    deliveries.id,
+    webhook_endpoints.name AS endpoint_name,
+    deliveries.target_url,
+    deliveries.status,
+    deliveries.status_code,
+    deliveries.created_at,
+    deliveries.delivery_duration_ms
+FROM deliveries
+JOIN webhook_events ON deliveries.event_id = webhook_events.id
+JOIN webhook_endpoints ON webhook_events.endpoint_id = webhook_endpoints.id
+ORDER BY deliveries.created_at DESC;

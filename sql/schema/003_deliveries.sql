@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE deliveries (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    event_id UUID NOT NULL REFERENCES webhook_events(id) ON DELETE CASCADE,
+    event_id UUID NOT NULL REFERENCES webhook_events(id) ON DELETE RESTRICT,
     target_url TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending',
     status_code INT,

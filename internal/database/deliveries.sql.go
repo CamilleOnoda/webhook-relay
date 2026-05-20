@@ -8,6 +8,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -64,32 +65,46 @@ func (q *Queries) CreateDelivery(ctx context.Context, arg CreateDeliveryParams) 
 }
 
 const listDeliveries = `-- name: ListDeliveries :many
-SELECT id, event_id, target_url, status, status_code, response_body, error_message, created_at, attempted_at, delivered_at, attempt_count, next_retry_at, delivery_duration_ms FROM deliveries
-ORDER BY created_at DESC
+SELECT 
+    deliveries.id,
+    webhook_endpoints.name AS endpoint_name,
+    deliveries.target_url,
+    deliveries.status,
+    deliveries.status_code,
+    deliveries.created_at,
+    deliveries.delivery_duration_ms
+FROM deliveries
+JOIN webhook_events ON deliveries.event_id = webhook_events.id
+JOIN webhook_endpoints ON webhook_events.endpoint_id = webhook_endpoints.id
+ORDER BY deliveries.created_at DESC
 `
 
-func (q *Queries) ListDeliveries(ctx context.Context) ([]Delivery, error) {
+type ListDeliveriesRow struct {
+	ID                 uuid.UUID
+	EndpointName       string
+	TargetUrl          string
+	Status             string
+	StatusCode         sql.NullInt32
+	CreatedAt          time.Time
+	DeliveryDurationMs sql.NullInt32
+}
+
+func (q *Queries) ListDeliveries(ctx context.Context) ([]ListDeliveriesRow, error) {
 	rows, err := q.db.QueryContext(ctx, listDeliveries)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Delivery
+	var items []ListDeliveriesRow
 	for rows.Next() {
-		var i Delivery
+		var i ListDeliveriesRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.EventID,
+			&i.EndpointName,
 			&i.TargetUrl,
 			&i.Status,
 			&i.StatusCode,
-			&i.ResponseBody,
-			&i.ErrorMessage,
 			&i.CreatedAt,
-			&i.AttemptedAt,
-			&i.DeliveredAt,
-			&i.AttemptCount,
-			&i.NextRetryAt,
 			&i.DeliveryDurationMs,
 		); err != nil {
 			return nil, err
