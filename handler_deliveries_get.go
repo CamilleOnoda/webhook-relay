@@ -13,6 +13,7 @@ type Delivery struct {
 	ID                 uuid.UUID     `json:"id"`
 	TargetUrl          string        `json:"target_url"`
 	Status             string        `json:"status"`
+	StatusCode         sql.NullInt32 `json:"status_code"`
 	CreatedAt          time.Time     `json:"created_at"`
 	DeliveryDurationMs sql.NullInt32 `json:"delivery_duration_ms"`
 }
@@ -38,6 +39,7 @@ func (cfg *apiConfig) handlerListDeliveries(w http.ResponseWriter, r *http.Reque
 			ID:                 delivery.ID,
 			TargetUrl:          delivery.TargetUrl,
 			Status:             delivery.Status,
+			StatusCode:         delivery.StatusCode,
 			CreatedAt:          delivery.CreatedAt,
 			DeliveryDurationMs: delivery.DeliveryDurationMs,
 		})
