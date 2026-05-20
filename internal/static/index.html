@@ -1,6 +1,50 @@
-<html>
-    <body>
-        <h1>Welcome to your Webhook Relay Service</h1>
-        <h2>A small automated post office for HTTP messages.</h2>
-        </body>
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Webhook Relay</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <main class="container">
+    <h1>Webhook Relay Dashboard</h1>
+
+    <section class="card">
+      <h2>Create Endpoint</h2>
+
+      <form id="endpoint-form">
+        <input
+          type="text"
+          id="name"
+          placeholder="Endpoint name"
+          required
+        >
+
+        <input
+          type="url"
+          id="target-url"
+          placeholder="https://example.com/webhook"
+          required
+        >
+
+        <button type="submit">Create</button>
+      </form>
+
+      <p id="message"></p>
+    </section>
+
+    <section class="card">
+      <h2>Endpoints</h2>
+
+      <div id="endpoint-list">
+        Loading...
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
 </html>
