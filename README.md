@@ -34,7 +34,7 @@ It focuses heavily on HTTP fundamentals and webhook forwarding behavior.
 8. Delivery results (status, duration, errors, response data) are stored for later inspection
 
 <p align="center">
-  <img src="assets/webhook-demo.gif" width="40%">
+  <img src="assets/webhook-diagram.png" width="40%">
 </p>
 
 ## Prerequisites and setup
@@ -98,7 +98,9 @@ This service lets you:
 - Delete endpoints and related webhook data
 
 ## Demo
-[screenshot/git](./assets/webhook-relay_Demo.mp4)
+<p align="center">
+  <img src="assets/webhook-demo.gif" width="40%">
+</p>
 
 ## API features
 #### Health check
