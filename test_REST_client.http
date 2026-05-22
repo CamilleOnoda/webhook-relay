@@ -1,65 +1,70 @@
+### Reset local test data
 DELETE http://localhost:8080/admin/endpoints/delete HTTP/1.1
-content-type: application/json
 
-###
+### List endpoints
+GET http://localhost:8080/api/endpoints HTTP/1.1
 
+### List events
+GET http://localhost:8080/api/events HTTP/1.1
+
+### List deliveries
+GET http://localhost:8080/api/deliveries HTTP/1.1
+
+
+### Create endpoint: successful delivery target
 POST http://localhost:8080/api/endpoints HTTP/1.1
-Content-Type: application/application/json
+Content-Type: application/json
 
 {
-    "name": "httpbin test",
-    "target_url": "https://httpbin.org/post",
-    "description": "test delivery"
+  "name": "httpbin success test",
+  "target_url": "https://httpbin.org/post",
+  "description": "Successful delivery test"
 }
 
-###
-POST http://localhost:8080/webhooks/b9428ba5-a859-4938-bfee-12ecdaef1236
+### Send webhook: successful delivery
+POST http://localhost:8080/webhooks/6d8e487d-1cd8-4bed-96a5-fbc98cde79be HTTP/1.1
 Content-Type: application/json
 X-Event-Type: user.created
 
-
 {
-    "message": "hello"
+  "message": "hello"
 }
 
-###
+
+### Create endpoint: failing delivery target
 POST http://localhost:8080/api/endpoints HTTP/1.1
-Content-Type: application/application/json
-
-{
-    "name": "httpbin test",
-    "target_url": "https://httpbin.org/status/500",
-    "description": "500 status code"
-}
-
-###
-POST http://localhost:8080/webhooks/b9428ba5-a859-4938-bfee-12ecdaef1236
 Content-Type: application/json
 
 {
-    "message": "500 status code"
+  "name": "httpbin failure test",
+  "target_url": "https://httpbin.org/status/500",
+  "description": "500 status code test"
 }
 
-###
-POST http://localhost:8080/webhooks/1234
+### Send webhook: failing delivery
+POST http://localhost:8080/webhooks/0e654e08-0127-40bf-822a-17f4ceadf76b HTTP/1.1
 Content-Type: application/json
 
 {
-    "message": "invalid UUID format"
+  "message": "500 status code"
 }
 
-###
-GET http://localhost:8080/webhooks/dde03b63-3ec8-45d8-ac87-39d3e5e55c4a
+
+### Send webhook: invalid UUID format
+POST http://localhost:8080/webhooks/1234 HTTP/1.1
 Content-Type: application/json
 
 {
-    "message": "Method not allowed"
+  "message": "invalid UUID format"
 }
 
-###
-POST http://localhost:8080/webhooks/11111111-1111-1111-1111-111111111111
+### Send webhook: valid UUID but endpoint does not exist
+POST http://localhost:8080/webhooks/11111111-1111-1111-1111-111111111111 HTTP/1.1
 Content-Type: application/json
 
 {
-    "message": "valid UUID not in the DB"
+  "message": "valid UUID not in the DB"
 }
+
+### Send webhook with wrong method
+GET http://localhost:8080/webhooks/dde03b63-3ec8-45d8-ac87-39d3e5e55c4a HTTP/1.1
