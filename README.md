@@ -21,7 +21,7 @@ It focuses heavily on HTTP fundamentals and webhook forwarding behavior.
   </tr>
 </table>
 
-## Webhook flow
+## Webhook flow and Demo
 1. A client registers a webhook endpoint with:
    `POST /api/endpoints`
 2. The relay generates a unique webhook URL:
@@ -33,9 +33,16 @@ It focuses heavily on HTTP fundamentals and webhook forwarding behavior.
 7. The webhook request is forwarded to the configured target URL
 8. Delivery results (status, duration, errors, response data) are stored for later inspection
 
-<p align="center">
-  <img src="assets/webhook-diagram.png" width="40%">
-</p>
+<table>
+  <tr>
+    <td align="center">
+      <img src="assets/webhook-diagram.png" height="350" width="350">
+    </td>
+    <td align="center">
+      <img src="assets/webhook-relay-demo.gif" height="350" width="350">
+    </td>
+  </tr>
+</table>
 
 ## Prerequisites and setup
 
@@ -96,11 +103,6 @@ This service lets you:
 - Track delivery status and response data
 - View endpoints and delivery history
 - Delete endpoints and related webhook data
-
-## Demo
-<p align="center">
-  <img src="assets/webhook-relay-demo.gif" width="40%">
-</p>
 
 ## API features
 #### Health check
