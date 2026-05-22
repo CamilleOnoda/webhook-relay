@@ -1,6 +1,6 @@
 -- name: CreateEndpoint :one
-INSERT INTO webhook_endpoints (name, target_url, description)
-VALUES ($1, $2, $3)
+INSERT INTO webhook_endpoints (name, target_url, description, user_id)
+VALUES ($1, $2, $3, $4)
 RETURNING *;
 
 -- name: ListEndpoints :many
