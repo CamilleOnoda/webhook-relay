@@ -29,6 +29,8 @@ async function loadEndpoints() {
           <p>${endpoint.name}</p>
         <p><strong>Webhook URL:</strong></p>
           <p>${endpoint.generated_url}</p>
+        <p><strong>Description:</strong></p>
+          <p>${endpoint.description}</p>
 
         <button class="send-button">Send Test Webhook</button>
         <button class="delete-button">Delete</button>
@@ -105,6 +107,7 @@ endpointForm.addEventListener("submit", async (event) => {
 
   const name = document.getElementById("name").value;
   const targetUrl = document.getElementById("target-url").value;
+  const description = document.getElementById("description").value;
 
   try {
     const response = await fetch("/api/endpoints", {
@@ -115,6 +118,7 @@ endpointForm.addEventListener("submit", async (event) => {
       body: JSON.stringify({
         name: name,
         target_url: targetUrl,
+        description: description,
       }),
     });
 
