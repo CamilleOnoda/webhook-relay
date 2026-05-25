@@ -15,6 +15,7 @@ type apiConfig struct {
 	db          *database.Queries
 	environment string
 	baseURL     string
+	jwt_secret  string
 }
 
 func main() {
@@ -24,8 +25,7 @@ func main() {
 		port = "8080"
 	}
 	dbURL := os.Getenv("DB_URL")
-	env := os.Getenv("ENV")
-	baseURL := os.Getenv("BASE_URL")
+
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
@@ -34,8 +34,9 @@ func main() {
 
 	cfg := &apiConfig{
 		db:          database.New(db),
-		environment: env,
-		baseURL:     baseURL,
+		environment: os.Getenv("ENV"),
+		baseURL:     os.Getenv("BASE_URL"),
+		jwt_secret:  os.Getenv("JWT_SECRET"),
 	}
 
 	mux := http.NewServeMux()
