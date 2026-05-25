@@ -1,8 +1,15 @@
 package auth
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/alexedwards/argon2id"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
+
+const tokenIssuer = "webhook-relay"
 
 func HashPassword(password string) (string, error) {
 	hash, err := argon2id.CreateHash(password, argon2id.DefaultParams)
@@ -18,4 +25,43 @@ func CheckPassword(password, hash string) (bool, error) {
 		return false, err
 	}
 	return match, nil
+}
+
+func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
+	expirationTime := time.Now().UTC().Add(expiresIn)
+	claims := jwt.RegisteredClaims{
+		Issuer:    tokenIssuer,
+		IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
+		ExpiresAt: jwt.NewNumericDate(expirationTime),
+		Subject:   userID.String(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(tokenSecret))
+}
+
+func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
+	claims := &jwt.RegisteredClaims{}
+	token, err := jwt.ParseWithClaims(
+		tokenString,
+		claims,
+		func(token *jwt.Token) (interface{}, error) {
+			return []byte(tokenSecret), nil
+		},
+		jwt.WithValidMethods([]string{"HS256"}))
+
+	if err != nil {
+		return uuid.Nil, err
+	}
+	if !token.Valid {
+		return uuid.Nil, fmt.Errorf("invalid token")
+	}
+	if claims.Issuer != tokenIssuer {
+		return uuid.Nil, fmt.Errorf("invalid issuer")
+	}
+	userID, err := uuid.Parse(claims.Subject)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("invalid subject: %v", err)
+	}
+
+	return userID, nil
 }
