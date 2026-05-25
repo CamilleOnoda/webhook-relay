@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/CamilleOnoda/webhook-relay.git/internal/auth"
 	"github.com/CamilleOnoda/webhook-relay.git/internal/database"
 	"github.com/google/uuid"
 )
@@ -38,22 +39,39 @@ func (cfg *apiConfig) handlerCreateEndpoint(w http.ResponseWriter, r *http.Reque
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid request payload", err)
+		respondWithError(w, http.StatusBadRequest,
+			"Invalid request payload", err)
 		return
 	}
 
 	if req.Name == "" || req.TargetUrl == "" {
-		respondWithError(w, http.StatusBadRequest, "Name and TargetUrl are required", nil)
+		respondWithError(w, http.StatusBadRequest,
+			"Name and TargetUrl are required", nil)
 		return
 	}
 
 	validURL, err := url.Parse(req.TargetUrl)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid target url format", err)
+		respondWithError(w, http.StatusBadRequest,
+			"Invalid target url format", err)
 		return
 	}
 	if validURL.Scheme != "https" {
-		respondWithError(w, http.StatusBadRequest, "Target url must use HTTPS scheme", nil)
+		respondWithError(w, http.StatusBadRequest,
+			"Target url must use HTTPS scheme", nil)
+		return
+	}
+
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized,
+			"failed to get token", err)
+		return
+	}
+	validToken, err := auth.ValidateJWT(token, cfg.jwt_secret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized,
+			"failed to validate token", err)
 		return
 	}
 
@@ -64,12 +82,7 @@ func (cfg *apiConfig) handlerCreateEndpoint(w http.ResponseWriter, r *http.Reque
 		description = sql.NullString{Valid: false}
 	}
 
-	var userID uuid.NullUUID
-	if req.UserID != nil {
-		userID = uuid.NullUUID{UUID: *req.UserID, Valid: true}
-	} else {
-		userID = uuid.NullUUID{Valid: false}
-	}
+	userID := uuid.NullUUID{UUID: validToken, Valid: true}
 
 	dbEndpoint, err := cfg.db.CreateEndpoint(r.Context(), database.CreateEndpointParams{
 		Name:        req.Name,
