@@ -49,6 +49,8 @@ func main() {
 	mux.HandleFunc("GET /api/deliveries", cfg.handlerListDeliveries)
 	mux.HandleFunc("POST /api/endpoints", cfg.handlerCreateEndpoint)
 	mux.HandleFunc("POST /webhooks/{id}", cfg.handlerReceiveWebhook)
+	mux.HandleFunc("POST /api/users", cfg.handlerUsersCreate)
+	mux.HandleFunc("POST /api/login", cfg.handlerLogin)
 	mux.HandleFunc("DELETE /admin/endpoints/delete", cfg.handlerDeleteAllEndpoints)
 	mux.HandleFunc("DELETE /api/endpoints/{id}", cfg.handlerDeleteEndpointByID)
 
