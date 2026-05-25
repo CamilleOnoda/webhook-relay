@@ -13,15 +13,15 @@ import (
 )
 
 type Endpoint struct {
-	ID           uuid.UUID  `json:"id"`
-	Name         string     `json:"name"`
-	TargetUrl    string     `json:"target_url"`
-	IsActive     bool       `json:"is_active"`
-	CreatedAt    time.Time  `json:"created_at"`
-	UpdatedAt    time.Time  `json:"updated_at"`
-	GeneratedURL string     `json:"generated_url"`
-	Description  *string    `json:"description,omitempty"`
-	UserID       *uuid.UUID `json:"user_id"`
+	ID           uuid.UUID `json:"id"`
+	Name         string    `json:"name"`
+	TargetUrl    string    `json:"target_url"`
+	IsActive     bool      `json:"is_active"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	GeneratedURL string    `json:"generated_url"`
+	Description  *string   `json:"description,omitempty"`
+	UserID       uuid.UUID `json:"user_id"`
 }
 
 func (cfg *apiConfig) handlerCreateEndpoint(w http.ResponseWriter, r *http.Request) {
@@ -111,6 +111,7 @@ func (cfg *apiConfig) handlerCreateEndpoint(w http.ResponseWriter, r *http.Reque
 		UpdatedAt:    dbEndpoint.UpdatedAt,
 		GeneratedURL: "",
 		Description:  responseDescription,
+		UserID:       dbEndpoint.UserID.UUID,
 	}
 
 	generatedURL := cfg.baseURL + "/webhooks" + "/" + dbEndpoint.ID.String()
