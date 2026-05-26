@@ -13,15 +13,15 @@ import (
 )
 
 type Endpoint struct {
-	ID           uuid.UUID `json:"id"`
-	Name         string    `json:"name"`
-	TargetUrl    string    `json:"target_url"`
-	IsActive     bool      `json:"is_active"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
-	GeneratedURL string    `json:"generated_url"`
-	Description  *string   `json:"description,omitempty"`
-	UserID       uuid.UUID `json:"user_id"`
+	ID           uuid.UUID     `json:"id"`
+	Name         string        `json:"name"`
+	TargetUrl    string        `json:"target_url"`
+	IsActive     bool          `json:"is_active"`
+	CreatedAt    time.Time     `json:"created_at"`
+	UpdatedAt    time.Time     `json:"updated_at"`
+	GeneratedURL string        `json:"generated_url"`
+	Description  *string       `json:"description,omitempty"`
+	UserID       uuid.NullUUID `json:"user_id"`
 }
 
 func (cfg *apiConfig) handlerCreateEndpoint(w http.ResponseWriter, r *http.Request) {
@@ -32,10 +32,9 @@ func (cfg *apiConfig) handlerCreateEndpoint(w http.ResponseWriter, r *http.Reque
 	}
 
 	var req struct {
-		Name        string     `json:"name"`
-		TargetUrl   string     `json:"target_url"`
-		Description *string    `json:"description,omitempty"`
-		UserID      *uuid.UUID `json:"user_id"`
+		Name        string  `json:"name"`
+		TargetUrl   string  `json:"target_url"`
+		Description *string `json:"description,omitempty"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -82,7 +81,10 @@ func (cfg *apiConfig) handlerCreateEndpoint(w http.ResponseWriter, r *http.Reque
 		description = sql.NullString{Valid: false}
 	}
 
-	userID := uuid.NullUUID{UUID: validToken, Valid: true}
+	userID := uuid.NullUUID{
+		UUID:  validToken,
+		Valid: true,
+	}
 
 	dbEndpoint, err := cfg.db.CreateEndpoint(r.Context(), database.CreateEndpointParams{
 		Name:        req.Name,
@@ -111,7 +113,7 @@ func (cfg *apiConfig) handlerCreateEndpoint(w http.ResponseWriter, r *http.Reque
 		UpdatedAt:    dbEndpoint.UpdatedAt,
 		GeneratedURL: "",
 		Description:  responseDescription,
-		UserID:       dbEndpoint.UserID.UUID,
+		UserID:       userID,
 	}
 
 	generatedURL := cfg.baseURL + "/webhooks" + "/" + dbEndpoint.ID.String()
