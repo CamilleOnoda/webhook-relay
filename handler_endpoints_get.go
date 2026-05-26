@@ -32,6 +32,7 @@ func (cfg *apiConfig) handlerListEndpoints(w http.ResponseWriter, r *http.Reques
 			UpdatedAt:    endpoint.UpdatedAt,
 			GeneratedURL: cfg.baseURL + "/webhooks/" + endpoint.ID.String(),
 			Description:  &endpoint.Description.String,
+			UserID:       endpoint.UserID,
 		})
 	}
 

@@ -1,10 +1,8 @@
 package main
 
-import (
-	"net/http"
-)
+import "net/http"
 
-func (cfg *apiConfig) handlerDeleteAllEndpoints(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) handlerDeleteUsers(w http.ResponseWriter, r *http.Request) {
 	if cfg.environment != "dev" {
 		respondWithError(w, http.StatusForbidden, "Forbidden", nil)
 		return
@@ -15,9 +13,12 @@ func (cfg *apiConfig) handlerDeleteAllEndpoints(w http.ResponseWriter, r *http.R
 			"Method not allowed", nil)
 		return
 	}
-	if err := cfg.db.DeleteAllEndpoints(r.Context()); err != nil {
-		respondWithError(w, http.StatusNotFound, "Not found", err)
+
+	if err := cfg.db.DeleteUsers(r.Context()); err != nil {
+		respondWithError(w, http.StatusInternalServerError,
+			"Failed to delete users", err)
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
+
+	respondWithJSON(w, http.StatusNoContent, nil)
 }

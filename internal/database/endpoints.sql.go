@@ -13,19 +13,25 @@ import (
 )
 
 const createEndpoint = `-- name: CreateEndpoint :one
-INSERT INTO webhook_endpoints (name, target_url, description)
-VALUES ($1, $2, $3)
-RETURNING id, name, target_url, is_active, created_at, updated_at, description
+INSERT INTO webhook_endpoints (name, target_url, description, user_id)
+VALUES ($1, $2, $3, $4)
+RETURNING id, name, target_url, is_active, created_at, updated_at, description, user_id
 `
 
 type CreateEndpointParams struct {
 	Name        string
 	TargetUrl   string
 	Description sql.NullString
+	UserID      uuid.NullUUID
 }
 
 func (q *Queries) CreateEndpoint(ctx context.Context, arg CreateEndpointParams) (WebhookEndpoint, error) {
-	row := q.db.QueryRowContext(ctx, createEndpoint, arg.Name, arg.TargetUrl, arg.Description)
+	row := q.db.QueryRowContext(ctx, createEndpoint,
+		arg.Name,
+		arg.TargetUrl,
+		arg.Description,
+		arg.UserID,
+	)
 	var i WebhookEndpoint
 	err := row.Scan(
 		&i.ID,
@@ -35,6 +41,7 @@ func (q *Queries) CreateEndpoint(ctx context.Context, arg CreateEndpointParams) 
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Description,
+		&i.UserID,
 	)
 	return i, err
 }
@@ -59,7 +66,7 @@ func (q *Queries) DeleteEndpointByID(ctx context.Context, id uuid.UUID) error {
 }
 
 const getEndpointByID = `-- name: GetEndpointByID :one
-SELECT id, name, target_url, is_active, created_at, updated_at, description FROM webhook_endpoints
+SELECT id, name, target_url, is_active, created_at, updated_at, description, user_id FROM webhook_endpoints
 WHERE id = $1
 `
 
@@ -74,12 +81,13 @@ func (q *Queries) GetEndpointByID(ctx context.Context, id uuid.UUID) (WebhookEnd
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Description,
+		&i.UserID,
 	)
 	return i, err
 }
 
 const listEndpoints = `-- name: ListEndpoints :many
-SELECT id, name, target_url, is_active, created_at, updated_at, description FROM webhook_endpoints
+SELECT id, name, target_url, is_active, created_at, updated_at, description, user_id FROM webhook_endpoints
 ORDER BY created_at DESC
 `
 
@@ -100,6 +108,7 @@ func (q *Queries) ListEndpoints(ctx context.Context) ([]WebhookEndpoint, error) 
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Description,
+			&i.UserID,
 		); err != nil {
 			return nil, err
 		}
@@ -118,7 +127,7 @@ const updateEndpoint = `-- name: UpdateEndpoint :one
 UPDATE webhook_endpoints
 SET name = $2, target_url = $3, description = $4
 WHERE id = $1
-RETURNING id, name, target_url, is_active, created_at, updated_at, description
+RETURNING id, name, target_url, is_active, created_at, updated_at, description, user_id
 `
 
 type UpdateEndpointParams struct {
@@ -144,6 +153,7 @@ func (q *Queries) UpdateEndpoint(ctx context.Context, arg UpdateEndpointParams) 
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Description,
+		&i.UserID,
 	)
 	return i, err
 }

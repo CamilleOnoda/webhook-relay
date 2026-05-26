@@ -28,6 +28,15 @@ type Delivery struct {
 	DeliveryDurationMs sql.NullInt32
 }
 
+type User struct {
+	ID             uuid.UUID
+	Name           string
+	Email          string
+	HashedPassword string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
 type WebhookEndpoint struct {
 	ID          uuid.UUID
 	Name        string
@@ -36,6 +45,7 @@ type WebhookEndpoint struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	Description sql.NullString
+	UserID      uuid.NullUUID
 }
 
 type WebhookEvent struct {
