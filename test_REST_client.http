@@ -1,19 +1,44 @@
-### Reset local test data
+### Reset endpoints
 DELETE http://localhost:8080/admin/endpoints/delete HTTP/1.1
 
-### List endpoints
+### Reset users
+DELETE http://localhost:8080/admin/users/delete HTTP/1.1
+
+
+### Create user
+POST http://localhost:8080/api/users HTTP/1.1
+Content-Type: application/json
+
+{
+  "name": "Test User",
+  "email": "test@example.com",
+  "password": "testpassword"
+}
+
+
+### Login user
+POST http://localhost:8080/api/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "testpassword"
+}
+
+
+### List endpoints - unauthorized, should fail
 GET http://localhost:8080/api/endpoints HTTP/1.1
 
-### List events
-GET http://localhost:8080/api/events HTTP/1.1
 
-### List deliveries
-GET http://localhost:8080/api/deliveries HTTP/1.1
+### List endpoints - authenticated user, should return empty list first
+GET http://localhost:8080/api/endpoints HTTP/1.1
+Authorization: Bearer YOUR_TOKEN_HERE
 
 
 ### Create endpoint: successful delivery target
 POST http://localhost:8080/api/endpoints HTTP/1.1
 Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
 
 {
   "name": "httpbin success test",
@@ -21,19 +46,11 @@ Content-Type: application/json
   "description": "Successful delivery test"
 }
 
-### Send webhook: successful delivery
-POST http://localhost:8080/webhooks/6d8e487d-1cd8-4bed-96a5-fbc98cde79be HTTP/1.1
-Content-Type: application/json
-X-Event-Type: user.created
-
-{
-  "message": "hello"
-}
-
 
 ### Create endpoint: failing delivery target
 POST http://localhost:8080/api/endpoints HTTP/1.1
 Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
 
 {
   "name": "httpbin failure test",
@@ -41,30 +58,102 @@ Content-Type: application/json
   "description": "500 status code test"
 }
 
-### Send webhook: failing delivery
-POST http://localhost:8080/webhooks/0e654e08-0127-40bf-822a-17f4ceadf76b HTTP/1.1
+
+### List endpoints - should now return authenticated user's endpoints
+GET http://localhost:8080/api/endpoints HTTP/1.1
+Authorization: Bearer YOUR_TOKEN_HERE
+
+
+### Get specific endpoint - authenticated user
+GET http://localhost:8080/api/endpoints/SUCCESS_ENDPOINT_ID HTTP/1.1
+Authorization: Bearer YOUR_TOKEN_HERE
+
+
+### Get specific endpoint - invalid UUID format
+GET http://localhost:8080/api/endpoints/1234 HTTP/1.1
+Authorization: Bearer YOUR_TOKEN_HERE
+
+
+### Get specific endpoint - valid UUID but endpoint does not exist
+GET http://localhost:8080/api/endpoints/11111111-1111-1111-1111-111111111111 HTTP/1.1
+Authorization: Bearer YOUR_TOKEN_HERE
+
+
+### Send webhook - unauthorized, should fail
+POST http://localhost:8080/webhooks/SUCCESS_ENDPOINT_ID HTTP/1.1
 Content-Type: application/json
+X-Event-Type: test.created
 
 {
-  "message": "500 status code"
+  "message": "unauthorized webhook test"
+}
+
+
+### Send webhook: successful delivery
+POST http://localhost:8080/webhooks/SUCCESS_ENDPOINT_ID HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+X-Event-Type: test.created
+
+{
+  "message": "successful delivery test"
+}
+
+
+### Send webhook: failing delivery
+POST http://localhost:8080/webhooks/FAILURE_ENDPOINT_ID HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+X-Event-Type: test.failed
+
+{
+  "message": "500 status code test"
 }
 
 
 ### Send webhook: invalid UUID format
 POST http://localhost:8080/webhooks/1234 HTTP/1.1
 Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
 
 {
   "message": "invalid UUID format"
 }
 
+
 ### Send webhook: valid UUID but endpoint does not exist
 POST http://localhost:8080/webhooks/11111111-1111-1111-1111-111111111111 HTTP/1.1
 Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
 
 {
   "message": "valid UUID not in the DB"
 }
 
+
 ### Send webhook with wrong method
-GET http://localhost:8080/webhooks/dde03b63-3ec8-45d8-ac87-39d3e5e55c4a HTTP/1.1
+GET http://localhost:8080/webhooks/SUCCESS_ENDPOINT_ID HTTP/1.1
+Authorization: Bearer YOUR_TOKEN_HERE
+
+
+### Delete endpoint - authenticated owner
+DELETE http://localhost:8080/api/endpoints/SUCCESS_ENDPOINT_ID HTTP/1.1
+Authorization: Bearer YOUR_TOKEN_HERE
+
+
+### Delete endpoint - invalid UUID format
+DELETE http://localhost:8080/api/endpoints/1234 HTTP/1.1
+Authorization: Bearer YOUR_TOKEN_HERE
+
+
+### Delete endpoint - valid UUID but endpoint does not exist
+DELETE http://localhost:8080/api/endpoints/11111111-1111-1111-1111-111111111111 HTTP/1.1
+Authorization: Bearer YOUR_TOKEN_HERE
+
+
+### List events
+GET http://localhost:8080/api/events HTTP/1.1
+
+
+### List deliveries
+GET http://localhost:8080/api/deliveries HTTP/1.1
