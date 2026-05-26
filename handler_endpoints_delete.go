@@ -11,11 +11,11 @@ func (cfg *apiConfig) handlerDeleteAllEndpoints(w http.ResponseWriter, r *http.R
 	}
 	w.Header().Set("Content-type", "application/json")
 	if r.Method != http.MethodDelete {
-		respondWithError(w, http.StatusMethodNotAllowed, "Method not allowed", nil)
+		respondWithError(w, http.StatusMethodNotAllowed,
+			"Method not allowed", nil)
 		return
 	}
-	err := cfg.db.DeleteAllEndpoints(r.Context())
-	if err != nil {
+	if err := cfg.db.DeleteAllEndpoints(r.Context()); err != nil {
 		respondWithError(w, http.StatusNotFound, "Not found", err)
 		return
 	}
