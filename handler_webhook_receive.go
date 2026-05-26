@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/CamilleOnoda/webhook-relay.git/internal/auth"
 	"github.com/CamilleOnoda/webhook-relay.git/internal/database"
 	"github.com/CamilleOnoda/webhook-relay.git/internal/service"
 	"github.com/google/uuid"
@@ -20,14 +21,35 @@ func (cfg *apiConfig) handlerReceiveWebhook(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	endpointID := r.PathValue("id")
-	id, err := uuid.Parse(endpointID)
+	token, err := auth.GetBearerToken(r.Header)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "invalid UUID format", err)
+		respondWithError(w, http.StatusUnauthorized,
+			"failed to get token", err)
+		return
+	}
+	userIDFromToken, err := auth.ValidateJWT(token, cfg.jwt_secret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized,
+			"failed to validate token", err)
 		return
 	}
 
-	endpoint, err := cfg.db.GetEndpointByID(r.Context(), id)
+	userID := uuid.NullUUID{
+		UUID:  userIDFromToken,
+		Valid: true,
+	}
+
+	endpointID := r.PathValue("id")
+	id, err := uuid.Parse(endpointID)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid endpoint ID forma", err)
+		return
+	}
+
+	endpoint, err := cfg.db.GetEndpointByIDAndUserID(r.Context(), database.GetEndpointByIDAndUserIDParams{
+		ID:     id,
+		UserID: userID,
+	})
 	if err != nil {
 		respondWithError(w, http.StatusNotFound, "endpoint not found", err)
 		return
