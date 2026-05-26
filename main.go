@@ -44,7 +44,7 @@ func main() {
 	mux.Handle("/", fileServer)
 
 	mux.HandleFunc("GET /api/health", handlerReadiness)
-	mux.HandleFunc("GET /api/endpoints", cfg.handlerListEndpoints)
+	mux.HandleFunc("GET /api/endpoints", cfg.handlerGetEndpoints)
 	mux.HandleFunc("GET /api/endpoints/{id}", cfg.handlerGetEndpointByID)
 	mux.HandleFunc("GET /api/events", cfg.handlerListEvents)
 	mux.HandleFunc("GET /api/deliveries", cfg.handlerListDeliveries)
