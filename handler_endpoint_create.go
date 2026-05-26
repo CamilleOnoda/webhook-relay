@@ -24,6 +24,8 @@ type Endpoint struct {
 	UserID       uuid.NullUUID `json:"user_id"`
 }
 
+// Create a new webhook endpoint for the authenticated user.
+// This is a write operation that modifies data.
 func (cfg *apiConfig) handlerCreateEndpoint(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodPost {
@@ -67,7 +69,7 @@ func (cfg *apiConfig) handlerCreateEndpoint(w http.ResponseWriter, r *http.Reque
 			"failed to get token", err)
 		return
 	}
-	validToken, err := auth.ValidateJWT(token, cfg.jwt_secret)
+	userIDFromToken, err := auth.ValidateJWT(token, cfg.jwt_secret)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized,
 			"failed to validate token", err)
@@ -82,7 +84,7 @@ func (cfg *apiConfig) handlerCreateEndpoint(w http.ResponseWriter, r *http.Reque
 	}
 
 	userID := uuid.NullUUID{
-		UUID:  validToken,
+		UUID:  userIDFromToken,
 		Valid: true,
 	}
 
