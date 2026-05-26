@@ -55,23 +55,35 @@ func (q *Queries) DeleteAllEndpoints(ctx context.Context) error {
 	return err
 }
 
-const deleteEndpointByID = `-- name: DeleteEndpointByID :exec
+const deleteEndpointByIDAndUserID = `-- name: DeleteEndpointByIDAndUserID :exec
 DELETE FROM webhook_endpoints
 WHERE id = $1
+AND user_id = $2
 `
 
-func (q *Queries) DeleteEndpointByID(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, deleteEndpointByID, id)
+type DeleteEndpointByIDAndUserIDParams struct {
+	ID     uuid.UUID
+	UserID uuid.NullUUID
+}
+
+func (q *Queries) DeleteEndpointByIDAndUserID(ctx context.Context, arg DeleteEndpointByIDAndUserIDParams) error {
+	_, err := q.db.ExecContext(ctx, deleteEndpointByIDAndUserID, arg.ID, arg.UserID)
 	return err
 }
 
-const getEndpointByID = `-- name: GetEndpointByID :one
+const getEndpointByIDAndUserID = `-- name: GetEndpointByIDAndUserID :one
 SELECT id, name, target_url, is_active, created_at, updated_at, description, user_id FROM webhook_endpoints
 WHERE id = $1
+AND user_id = $2
 `
 
-func (q *Queries) GetEndpointByID(ctx context.Context, id uuid.UUID) (WebhookEndpoint, error) {
-	row := q.db.QueryRowContext(ctx, getEndpointByID, id)
+type GetEndpointByIDAndUserIDParams struct {
+	ID     uuid.UUID
+	UserID uuid.NullUUID
+}
+
+func (q *Queries) GetEndpointByIDAndUserID(ctx context.Context, arg GetEndpointByIDAndUserIDParams) (WebhookEndpoint, error) {
+	row := q.db.QueryRowContext(ctx, getEndpointByIDAndUserID, arg.ID, arg.UserID)
 	var i WebhookEndpoint
 	err := row.Scan(
 		&i.ID,
@@ -86,13 +98,14 @@ func (q *Queries) GetEndpointByID(ctx context.Context, id uuid.UUID) (WebhookEnd
 	return i, err
 }
 
-const listEndpoints = `-- name: ListEndpoints :many
+const getEndpointsByUserID = `-- name: GetEndpointsByUserID :many
 SELECT id, name, target_url, is_active, created_at, updated_at, description, user_id FROM webhook_endpoints
+WHERE user_id = $1
 ORDER BY created_at DESC
 `
 
-func (q *Queries) ListEndpoints(ctx context.Context) ([]WebhookEndpoint, error) {
-	rows, err := q.db.QueryContext(ctx, listEndpoints)
+func (q *Queries) GetEndpointsByUserID(ctx context.Context, userID uuid.NullUUID) ([]WebhookEndpoint, error) {
+	rows, err := q.db.QueryContext(ctx, getEndpointsByUserID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -121,39 +134,4 @@ func (q *Queries) ListEndpoints(ctx context.Context) ([]WebhookEndpoint, error) 
 		return nil, err
 	}
 	return items, nil
-}
-
-const updateEndpoint = `-- name: UpdateEndpoint :one
-UPDATE webhook_endpoints
-SET name = $2, target_url = $3, description = $4
-WHERE id = $1
-RETURNING id, name, target_url, is_active, created_at, updated_at, description, user_id
-`
-
-type UpdateEndpointParams struct {
-	ID          uuid.UUID
-	Name        string
-	TargetUrl   string
-	Description sql.NullString
-}
-
-func (q *Queries) UpdateEndpoint(ctx context.Context, arg UpdateEndpointParams) (WebhookEndpoint, error) {
-	row := q.db.QueryRowContext(ctx, updateEndpoint,
-		arg.ID,
-		arg.Name,
-		arg.TargetUrl,
-		arg.Description,
-	)
-	var i WebhookEndpoint
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.TargetUrl,
-		&i.IsActive,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.Description,
-		&i.UserID,
-	)
-	return i, err
 }

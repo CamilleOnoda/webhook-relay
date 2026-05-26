@@ -3,23 +3,20 @@ INSERT INTO webhook_endpoints (name, target_url, description, user_id)
 VALUES ($1, $2, $3, $4)
 RETURNING *;
 
--- name: ListEndpoints :many
+-- name: GetEndpointByIDAndUserID :one
 SELECT * FROM webhook_endpoints
-ORDER BY created_at DESC;
-
--- name: GetEndpointByID :one
-SELECT * FROM webhook_endpoints
-WHERE id = $1;
+WHERE id = $1
+AND user_id = $2;
 
 -- name: DeleteAllEndpoints :exec
 DELETE FROM webhook_endpoints;
 
--- name: DeleteEndpointByID :exec
+-- name: DeleteEndpointByIDAndUserID :exec
 DELETE FROM webhook_endpoints
-WHERE id = $1;
-
--- name: UpdateEndpoint :one
-UPDATE webhook_endpoints
-SET name = $2, target_url = $3, description = $4
 WHERE id = $1
-RETURNING *;
+AND user_id = $2;
+
+-- name: GetEndpointsByUserID :many
+SELECT * FROM webhook_endpoints
+WHERE user_id = $1
+ORDER BY created_at DESC;
