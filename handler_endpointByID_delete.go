@@ -34,10 +34,7 @@ func (cfg *apiConfig) handlerDeleteEndpointByID(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	_, err = cfg.db.GetEndpointByIDAndUserID(r.Context(), database.GetEndpointByIDAndUserIDParams{
-		ID:     id,
-		UserID: userID,
-	})
+	_, err = cfg.db.GetEndpointByID(r.Context(), id)
 	if err != nil {
 		respondWithError(w, http.StatusNotFound, "endpoint not found", err)
 		return
