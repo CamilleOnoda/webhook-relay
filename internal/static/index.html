@@ -1,67 +1,39 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Webhook Relay</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Webhook Relay - Login</title>
+  <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
+  <main>
+    <h1>Webhook Relay</h1>
 
-  <main class="container">
-    <h1>Webhook Relay Dashboard</h1>
+    <p id="message"></p>
 
-    <section class="card">
-      <h2>Create Endpoint</h2>
+    <section>
+      <h2>Log in</h2>
 
-      <form id="endpoint-form">
-        <input
-          type="text"
-          id="name"
-          placeholder="Endpoint name"
-          required
-        >
-
-        <input
-          type="url"
-          id="target-url"
-          placeholder="https://example.com/webhook"
-          required
-        >
-
-        <input
-          type="description"
-          id="description"
-          placeholder="Description (optional)"
-        >
-
-        <button type="submit">Create</button>
+      <form id="login-form">
+        <input id="login-email" type="email" placeholder="Email" required />
+        <input id="login-password" type="password" placeholder="Password" required />
+        <button type="submit">Log in</button>
       </form>
-
-      <p id="message"></p>
     </section>
 
-    <section class="card">
-      <h2>Endpoint dashboard</h2>
+    <section>
+      <h2>Register</h2>
 
-      <div id="endpoint-list">
-        Loading...
-      </div>
+      <form id="register-form">
+        <input id="register-name" type="text" placeholder="Name" required />
+        <input id="register-email" type="email" placeholder="Email" required />
+        <input id="register-password" type="password" placeholder="Password" required />
+        <button type="submit">Register</button>
+      </form>
     </section>
-
-    <section class="card">
-      <h2>Event history</h2>
-      <div id="event-list">No events yet.</div>
-    </section>
-
-    <section class="card">
-      <h2>Delivery history</h2>
-      <div id="delivery-list">No deliveries yet.</div>
-    </section>
-
   </main>
 
-  <script src="app.js"></script>
+  <script src="/app.js"></script>
 </body>
 </html>

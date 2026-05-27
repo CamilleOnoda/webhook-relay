@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Webhook Relay - Dashboard</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Webhook Relay Dashboard</h1>
+      <button id="logout-button">Log out</button>
+    </header>
+
+    <p id="message"></p>
+
+    <section>
+      <h2>Create endpoint</h2>
+
+      <form id="endpoint-form">
+        <input id="name" type="text" placeholder="Endpoint name" required />
+        <input id="target-url" type="url" placeholder="Target URL" required />
+        <textarea id="description" placeholder="Description"></textarea>
+        <button type="submit">Create endpoint</button>
+      </form>
+    </section>
+
+    <section>
+      <h2>Endpoints</h2>
+      <div id="endpoint-list"></div>
+    </section>
+
+    <section>
+      <h2>Events</h2>
+      <div id="event-list"></div>
+    </section>
+
+    <section>
+      <h2>Deliveries</h2>
+      <div id="delivery-list"></div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
