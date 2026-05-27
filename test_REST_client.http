@@ -1,27 +1,48 @@
-### Reset endpoints
+### Delete all endpoints - admin endpoint
 DELETE http://localhost:8080/admin/endpoints/delete HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3ZWJob29rLXJlbGF5Iiwic3ViIjoiYTliY2JjNTktMWUzZS00ZGE3LWFiNTAtMWYyN2JkNDNhYzAwIiwiZXhwIjoxNzc5ODYwNjIzLCJpYXQiOjE3Nzk4NTcwMjN9.qxY-ptmic45tniyw_n4DwLtyB86T5jzWHA103ofxy7Y
 
-### Reset users
+### Delete all users - admin endpoint
 DELETE http://localhost:8080/admin/users/delete HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3ZWJob29rLXJlbGF5Iiwic3ViIjoiYTliY2JjNTktMWUzZS00ZGE3LWFiNTAtMWYyN2JkNDNhYzAwIiwiZXhwIjoxNzc5ODYwNjIzLCJpYXQiOjE3Nzk4NTcwMjN9.qxY-ptmic45tniyw_n4DwLtyB86T5jzWHA103ofxy7Y
 
 
-### Create user
+### Create user 1
 POST http://localhost:8080/api/users HTTP/1.1
 Content-Type: application/json
 
 {
-  "name": "Test User",
+  "name": "User 1",
   "email": "test@example.com",
   "password": "testpassword"
 }
 
+### Create user 2
+POST http://localhost:8080/api/users HTTP/1.1
+Content-Type: application/json
 
-### Login user
+{
+  "name": "User 2",
+  "email": "test@me.com",
+  "password": "testpassword"
+}
+
+
+### Login user 1
 POST http://localhost:8080/api/login HTTP/1.1
 Content-Type: application/json
 
 {
   "email": "test@example.com",
+  "password": "testpassword"
+}
+
+### Login user 2
+POST http://localhost:8080/api/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "email": "test@me.com",
   "password": "testpassword"
 }
 
@@ -32,13 +53,13 @@ GET http://localhost:8080/api/endpoints HTTP/1.1
 
 ### List endpoints - authenticated user, should return empty list first
 GET http://localhost:8080/api/endpoints HTTP/1.1
-Authorization: Bearer YOUR_TOKEN_HERE
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3ZWJob29rLXJlbGF5Iiwic3ViIjoiNWY4MjIwYmUtY2RmMC00NDA1LWI4ZGYtYjFjY2ViOWMyOWMyIiwiZXhwIjoxNzc5ODU4MjA2LCJpYXQiOjE3Nzk4NTQ2MDZ9.mK7HhnbsAFcDLRbyoorTDcDDA931J_xVyz9nqhAALPY
 
 
 ### Create endpoint: successful delivery target
 POST http://localhost:8080/api/endpoints HTTP/1.1
 Content-Type: application/json
-Authorization: Bearer YOUR_TOKEN_HERE
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3ZWJob29rLXJlbGF5Iiwic3ViIjoiYTliY2JjNTktMWUzZS00ZGE3LWFiNTAtMWYyN2JkNDNhYzAwIiwiZXhwIjoxNzc5ODYwNTQ5LCJpYXQiOjE3Nzk4NTY5NDl9.cn8VSV1XXek3QqpjlVrkQV1txIGofwrn7ZzG7X1sIO4
 
 {
   "name": "httpbin success test",
@@ -50,7 +71,7 @@ Authorization: Bearer YOUR_TOKEN_HERE
 ### Create endpoint: failing delivery target
 POST http://localhost:8080/api/endpoints HTTP/1.1
 Content-Type: application/json
-Authorization: Bearer YOUR_TOKEN_HERE
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3ZWJob29rLXJlbGF5Iiwic3ViIjoiNWY4MjIwYmUtY2RmMC00NDA1LWI4ZGYtYjFjY2ViOWMyOWMyIiwiZXhwIjoxNzc5ODU4MjA2LCJpYXQiOjE3Nzk4NTQ2MDZ9.mK7HhnbsAFcDLRbyoorTDcDDA931J_xVyz9nqhAALPY
 
 {
   "name": "httpbin failure test",
@@ -59,41 +80,31 @@ Authorization: Bearer YOUR_TOKEN_HERE
 }
 
 
-### List endpoints - should now return authenticated user's endpoints
+### List endpoints - should return authenticated user's endpoints
 GET http://localhost:8080/api/endpoints HTTP/1.1
-Authorization: Bearer YOUR_TOKEN_HERE
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3ZWJob29rLXJlbGF5Iiwic3ViIjoiNWY4MjIwYmUtY2RmMC00NDA1LWI4ZGYtYjFjY2ViOWMyOWMyIiwiZXhwIjoxNzc5ODU4MjA2LCJpYXQiOjE3Nzk4NTQ2MDZ9.mK7HhnbsAFcDLRbyoorTDcDDA931J_xVyz9nqhAALPY
 
 
-### Get specific endpoint - authenticated user
-GET http://localhost:8080/api/endpoints/SUCCESS_ENDPOINT_ID HTTP/1.1
-Authorization: Bearer YOUR_TOKEN_HERE
+### Get specific endpoint - authenticated owner
+GET http://localhost:8080/api/endpoints/b743d451-a96f-4552-b80c-124d8f72b096 HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3ZWJob29rLXJlbGF5Iiwic3ViIjoiZGYxN2JiZGUtZmNkNS00OWIwLTljODEtMDZlYzhhYWE5OGIzIiwiZXhwIjoxNzc5ODU4OTYxLCJpYXQiOjE3Nzk4NTUzNjF9.Wf4Llu5xSnVzor0ARoblfY9fyt1131wr2XjVcZzCYnM
 
 
 ### Get specific endpoint - invalid UUID format
 GET http://localhost:8080/api/endpoints/1234 HTTP/1.1
-Authorization: Bearer YOUR_TOKEN_HERE
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3ZWJob29rLXJlbGF5Iiwic3ViIjoiNWY4MjIwYmUtY2RmMC00NDA1LWI4ZGYtYjFjY2ViOWMyOWMyIiwiZXhwIjoxNzc5ODU4MjA2LCJpYXQiOjE3Nzk4NTQ2MDZ9.mK7HhnbsAFcDLRbyoorTDcDDA931J_xVyz9nqhAALPY
 
 
 ### Get specific endpoint - valid UUID but endpoint does not exist
 GET http://localhost:8080/api/endpoints/11111111-1111-1111-1111-111111111111 HTTP/1.1
-Authorization: Bearer YOUR_TOKEN_HERE
-
-
-### Send webhook - unauthorized, should fail
-POST http://localhost:8080/webhooks/SUCCESS_ENDPOINT_ID HTTP/1.1
-Content-Type: application/json
-X-Event-Type: test.created
-
-{
-  "message": "unauthorized webhook test"
-}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3ZWJob29rLXJlbGF5Iiwic3ViIjoiNWY4MjIwYmUtY2RmMC00NDA1LWI4ZGYtYjFjY2ViOWMyOWMyIiwiZXhwIjoxNzc5ODU4MjA2LCJpYXQiOjE3Nzk4NTQ2MDZ9.mK7HhnbsAFcDLRbyoorTDcDDA931J_xVyz9nqhAALPY
 
 
 ### Send webhook: successful delivery
-POST http://localhost:8080/webhooks/SUCCESS_ENDPOINT_ID HTTP/1.1
+POST http://localhost:8080/webhooks/b743d451-a96f-4552-b80c-124d8f72b096 HTTP/1.1
 Content-Type: application/json
-Authorization: Bearer YOUR_TOKEN_HERE
 X-Event-Type: test.created
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3ZWJob29rLXJlbGF5Iiwic3ViIjoiNWY4MjIwYmUtY2RmMC00NDA1LWI4ZGYtYjFjY2ViOWMyOWMyIiwiZXhwIjoxNzc5ODU4MjA2LCJpYXQiOjE3Nzk4NTQ2MDZ9.mK7HhnbsAFcDLRbyoorTDcDDA931J_xVyz9nqhAALPY
 
 {
   "message": "successful delivery test"
@@ -101,10 +112,10 @@ X-Event-Type: test.created
 
 
 ### Send webhook: failing delivery
-POST http://localhost:8080/webhooks/FAILURE_ENDPOINT_ID HTTP/1.1
+POST http://localhost:8080/webhooks/9d1734ab-ad3f-40f2-b7ab-ce438f76e613 HTTP/1.1
 Content-Type: application/json
-Authorization: Bearer YOUR_TOKEN_HERE
 X-Event-Type: test.failed
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3ZWJob29rLXJlbGF5Iiwic3ViIjoiNWY4MjIwYmUtY2RmMC00NDA1LWI4ZGYtYjFjY2ViOWMyOWMyIiwiZXhwIjoxNzc5ODU4MjA2LCJpYXQiOjE3Nzk4NTQ2MDZ9.mK7HhnbsAFcDLRbyoorTDcDDA931J_xVyz9nqhAALPY
 
 {
   "message": "500 status code test"
@@ -114,7 +125,7 @@ X-Event-Type: test.failed
 ### Send webhook: invalid UUID format
 POST http://localhost:8080/webhooks/1234 HTTP/1.1
 Content-Type: application/json
-Authorization: Bearer YOUR_TOKEN_HERE
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3ZWJob29rLXJlbGF5Iiwic3ViIjoiNWY4MjIwYmUtY2RmMC00NDA1LWI4ZGYtYjFjY2ViOWMyOWMyIiwiZXhwIjoxNzc5ODU4MjA2LCJpYXQiOjE3Nzk4NTQ2MDZ9.mK7HhnbsAFcDLRbyoorTDcDDA931J_xVyz9nqhAALPY
 
 {
   "message": "invalid UUID format"
@@ -124,7 +135,7 @@ Authorization: Bearer YOUR_TOKEN_HERE
 ### Send webhook: valid UUID but endpoint does not exist
 POST http://localhost:8080/webhooks/11111111-1111-1111-1111-111111111111 HTTP/1.1
 Content-Type: application/json
-Authorization: Bearer YOUR_TOKEN_HERE
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3ZWJob29rLXJlbGF5Iiwic3ViIjoiNWY4MjIwYmUtY2RmMC00NDA1LWI4ZGYtYjFjY2ViOWMyOWMyIiwiZXhwIjoxNzc5ODU4MjA2LCJpYXQiOjE3Nzk4NTQ2MDZ9.mK7HhnbsAFcDLRbyoorTDcDDA931J_xVyz9nqhAALPY
 
 {
   "message": "valid UUID not in the DB"
@@ -132,28 +143,37 @@ Authorization: Bearer YOUR_TOKEN_HERE
 
 
 ### Send webhook with wrong method
-GET http://localhost:8080/webhooks/SUCCESS_ENDPOINT_ID HTTP/1.1
-Authorization: Bearer YOUR_TOKEN_HERE
+GET http://localhost:8080/webhooks/b743d451-a96f-4552-b80c-124d8f72b096 HTTP/1.1
+
+
+### List events - unauthorized, should fail
+GET http://localhost:8080/api/events HTTP/1.1
+
+
+### List events - authenticated user
+GET http://localhost:8080/api/events HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3ZWJob29rLXJlbGF5Iiwic3ViIjoiNWY4MjIwYmUtY2RmMC00NDA1LWI4ZGYtYjFjY2ViOWMyOWMyIiwiZXhwIjoxNzc5ODU4MjA2LCJpYXQiOjE3Nzk4NTQ2MDZ9.mK7HhnbsAFcDLRbyoorTDcDDA931J_xVyz9nqhAALPY
+
+
+### List deliveries - unauthorized, should fail
+GET http://localhost:8080/api/deliveries HTTP/1.1
+
+
+### List deliveries - authenticated user
+GET http://localhost:8080/api/deliveries HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3ZWJob29rLXJlbGF5Iiwic3ViIjoiNWY4MjIwYmUtY2RmMC00NDA1LWI4ZGYtYjFjY2ViOWMyOWMyIiwiZXhwIjoxNzc5ODU4MjA2LCJpYXQiOjE3Nzk4NTQ2MDZ9.mK7HhnbsAFcDLRbyoorTDcDDA931J_xVyz9nqhAALPY
 
 
 ### Delete endpoint - authenticated owner
 DELETE http://localhost:8080/api/endpoints/SUCCESS_ENDPOINT_ID HTTP/1.1
-Authorization: Bearer YOUR_TOKEN_HERE
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3ZWJob29rLXJlbGF5Iiwic3ViIjoiNWY4MjIwYmUtY2RmMC00NDA1LWI4ZGYtYjFjY2ViOWMyOWMyIiwiZXhwIjoxNzc5ODU4MjA2LCJpYXQiOjE3Nzk4NTQ2MDZ9.mK7HhnbsAFcDLRbyoorTDcDDA931J_xVyz9nqhAALPY
 
 
 ### Delete endpoint - invalid UUID format
 DELETE http://localhost:8080/api/endpoints/1234 HTTP/1.1
-Authorization: Bearer YOUR_TOKEN_HERE
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3ZWJob29rLXJlbGF5Iiwic3ViIjoiNWY4MjIwYmUtY2RmMC00NDA1LWI4ZGYtYjFjY2ViOWMyOWMyIiwiZXhwIjoxNzc5ODU4MjA2LCJpYXQiOjE3Nzk4NTQ2MDZ9.mK7HhnbsAFcDLRbyoorTDcDDA931J_xVyz9nqhAALPY
 
 
 ### Delete endpoint - valid UUID but endpoint does not exist
 DELETE http://localhost:8080/api/endpoints/11111111-1111-1111-1111-111111111111 HTTP/1.1
-Authorization: Bearer YOUR_TOKEN_HERE
-
-
-### List events
-GET http://localhost:8080/api/events HTTP/1.1
-
-
-### List deliveries
-GET http://localhost:8080/api/deliveries HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3ZWJob29rLXJlbGF5Iiwic3ViIjoiNWY4MjIwYmUtY2RmMC00NDA1LWI4ZGYtYjFjY2ViOWMyOWMyIiwiZXhwIjoxNzc5ODU4MjA2LCJpYXQiOjE3Nzk4NTQ2MDZ9.mK7HhnbsAFcDLRbyoorTDcDDA931J_xVyz9nqhAALPY
