@@ -40,9 +40,6 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	fileServer := http.FileServer(http.Dir("./internal/static"))
-	mux.Handle("/", fileServer)
-
 	mux.HandleFunc("GET /admin/health", handlerReadiness)
 
 	mux.Handle("GET /api/endpoints",
@@ -61,17 +58,15 @@ func main() {
 		cfg.authMiddleware(
 			http.HandlerFunc(cfg.handlerListDeliveriesByUser)))
 
-	mux.Handle("POST /api/endpoints",
+	mux.Handle("/api/endpoints",
 		cfg.authMiddleware(
 			http.HandlerFunc(cfg.handlerCreateEndpoint)))
 
-	mux.Handle("POST /webhooks/{id}",
-		cfg.authMiddleware(
-			http.HandlerFunc(cfg.handlerReceiveWebhook)))
+	mux.HandleFunc("POST /webhooks/{id}", cfg.handlerReceiveWebhook)
 
 	mux.HandleFunc("POST /api/users", cfg.handlerUsersCreate)
 
-	mux.HandleFunc("POST /api/login", cfg.handlerLogin)
+	mux.HandleFunc("/api/login", cfg.handlerLogin)
 
 	mux.Handle("DELETE /admin/users/delete",
 		cfg.authMiddleware(
@@ -86,6 +81,9 @@ func main() {
 	mux.Handle("DELETE /api/endpoints/{id}",
 		cfg.authMiddleware(
 			http.HandlerFunc(cfg.handlerDeleteEndpointByID)))
+
+	fileServer := http.FileServer(http.Dir("./internal/static"))
+	mux.Handle("/", fileServer)
 
 	srv := &http.Server{
 		Addr:    ":" + port,
