@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/CamilleOnoda/webhook-relay.git/internal/auth"
 	"github.com/CamilleOnoda/webhook-relay.git/internal/database"
 	"github.com/google/uuid"
 )
@@ -29,7 +28,8 @@ type Endpoint struct {
 func (cfg *apiConfig) handlerCreateEndpoint(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodPost {
-		respondWithError(w, http.StatusMethodNotAllowed, "Method not allowed", nil)
+		respondWithError(w, http.StatusMethodNotAllowed,
+			"Method not allowed", nil)
 		return
 	}
 
@@ -63,17 +63,15 @@ func (cfg *apiConfig) handlerCreateEndpoint(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	token, err := auth.GetBearerToken(r.Header)
-	if err != nil {
+	userIDFromToken, ok := r.Context().Value("userID").(uuid.UUID)
+	if !ok {
 		respondWithError(w, http.StatusUnauthorized,
-			"failed to get token", err)
+			"Invalid user ID in token", nil)
 		return
 	}
-	userIDFromToken, err := auth.ValidateJWT(token, cfg.jwt_secret)
-	if err != nil {
-		respondWithError(w, http.StatusUnauthorized,
-			"failed to validate token", err)
-		return
+	userID := uuid.NullUUID{
+		UUID:  userIDFromToken,
+		Valid: true,
 	}
 
 	var description sql.NullString
@@ -81,11 +79,6 @@ func (cfg *apiConfig) handlerCreateEndpoint(w http.ResponseWriter, r *http.Reque
 		description = sql.NullString{String: *req.Description, Valid: true}
 	} else {
 		description = sql.NullString{Valid: false}
-	}
-
-	userID := uuid.NullUUID{
-		UUID:  userIDFromToken,
-		Valid: true,
 	}
 
 	dbEndpoint, err := cfg.db.CreateEndpoint(r.Context(), database.CreateEndpointParams{

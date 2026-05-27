@@ -3,11 +3,12 @@ package main
 import (
 	"net/http"
 
-	"github.com/CamilleOnoda/webhook-relay.git/internal/auth"
 	"github.com/CamilleOnoda/webhook-relay.git/internal/database"
 	"github.com/google/uuid"
 )
 
+// Delete a specific endpoint by ID for the authenticated user.
+// Endpoint: DELETE /endpoints/{id}
 func (cfg *apiConfig) handlerDeleteEndpointByID(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodDelete {
@@ -15,19 +16,12 @@ func (cfg *apiConfig) handlerDeleteEndpointByID(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	token, err := auth.GetBearerToken(r.Header)
-	if err != nil {
+	userIDFromToken, ok := r.Context().Value("userID").(uuid.UUID)
+	if !ok {
 		respondWithError(w, http.StatusUnauthorized,
-			"failed to get token", err)
+			"Invalid user ID in token", nil)
 		return
 	}
-	userIDFromToken, err := auth.ValidateJWT(token, cfg.jwt_secret)
-	if err != nil {
-		respondWithError(w, http.StatusUnauthorized,
-			"failed to validate token", err)
-		return
-	}
-
 	userID := uuid.NullUUID{
 		UUID:  userIDFromToken,
 		Valid: true,

@@ -43,18 +43,43 @@ func main() {
 	fileServer := http.FileServer(http.Dir("./internal/static"))
 	mux.Handle("/", fileServer)
 
-	mux.HandleFunc("GET /api/health", handlerReadiness)
-	mux.HandleFunc("GET /api/endpoints", cfg.handlerGetEndpoints)
-	mux.HandleFunc("GET /api/endpoints/{id}", cfg.handlerGetEndpointByID)
-	mux.HandleFunc("GET /api/events", cfg.handlerListEvents)
-	mux.HandleFunc("GET /api/deliveries", cfg.handlerListDeliveries)
-	mux.HandleFunc("POST /api/endpoints", cfg.handlerCreateEndpoint)
-	mux.HandleFunc("POST /webhooks/{id}", cfg.handlerReceiveWebhook)
+	mux.HandleFunc("GET /admin/health", handlerReadiness)
+
+	mux.Handle("GET /api/endpoints",
+		cfg.authMiddleware(
+			http.HandlerFunc(cfg.handlerGetEndpoints)))
+
+	mux.Handle("GET /api/endpoints/{id}",
+		cfg.authMiddleware(
+			http.HandlerFunc(cfg.handlerGetEndpointByID)))
+
+	mux.Handle("GET /api/events",
+		cfg.authMiddleware(
+			http.HandlerFunc(cfg.handlerListEventsByUser)))
+
+	mux.Handle("GET /api/deliveries",
+		cfg.authMiddleware(
+			http.HandlerFunc(cfg.handlerListDeliveriesByUser)))
+
+	mux.Handle("POST /api/endpoints",
+		cfg.authMiddleware(
+			http.HandlerFunc(cfg.handlerCreateEndpoint)))
+
+	mux.Handle("POST /webhooks/{id}",
+		cfg.authMiddleware(
+			http.HandlerFunc(cfg.handlerReceiveWebhook)))
+
 	mux.HandleFunc("POST /api/users", cfg.handlerUsersCreate)
+
 	mux.HandleFunc("POST /api/login", cfg.handlerLogin)
+
 	mux.HandleFunc("DELETE /admin/users/delete", cfg.handlerDeleteUsers)
+
 	mux.HandleFunc("DELETE /admin/endpoints/delete", cfg.handlerDeleteAllEndpoints)
-	mux.HandleFunc("DELETE /api/endpoints/{id}", cfg.handlerDeleteEndpointByID)
+
+	mux.Handle("DELETE /api/endpoints/{id}",
+		cfg.authMiddleware(
+			http.HandlerFunc(cfg.handlerDeleteEndpointByID)))
 
 	srv := &http.Server{
 		Addr:    ":" + port,

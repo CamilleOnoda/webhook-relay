@@ -9,13 +9,16 @@ import (
 )
 
 type Event struct {
-	ID           uuid.UUID `json:"id"`
-	EndpointName string    `json:"endpoint_name"`
-	EventType    *string   `json:"event_type"`
-	ReceivedAt   time.Time `json:"received_at"`
+	ID           uuid.UUID     `json:"id"`
+	EndpointName string        `json:"endpoint_name"`
+	EventType    *string       `json:"event_type"`
+	ReceivedAt   time.Time     `json:"received_at"`
+	UserID       uuid.NullUUID `json:"user_id"`
 }
 
-func (cfg *apiConfig) handlerListEvents(w http.ResponseWriter, r *http.Request) {
+// List all webhook events for the authenticated user.
+// This is a read-only operation that does not modify any data.
+func (cfg *apiConfig) handlerListEventsByUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodGet {
 		respondWithError(w, http.StatusMethodNotAllowed,
@@ -23,11 +26,22 @@ func (cfg *apiConfig) handlerListEvents(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	var events []database.ListEventsRow
-	events, err := cfg.db.ListEvents(r.Context())
+	userIDFromToken, ok := r.Context().Value("userID").(uuid.UUID)
+	if !ok {
+		respondWithError(w, http.StatusUnauthorized,
+			"Invalid user ID in token", nil)
+		return
+	}
+	userID := uuid.NullUUID{
+		UUID:  userIDFromToken,
+		Valid: true,
+	}
+
+	var events []database.ListEventsByUserRow
+	events, err := cfg.db.ListEventsByUser(r.Context(), userID)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError,
-			"failed to list events", err)
+			"Failed to list events", err)
 		return
 	}
 
@@ -44,6 +58,7 @@ func (cfg *apiConfig) handlerListEvents(w http.ResponseWriter, r *http.Request) 
 			EndpointName: event.EndpointName,
 			EventType:    eventType,
 			ReceivedAt:   event.ReceivedAt,
+			UserID:       userID,
 		})
 	}
 

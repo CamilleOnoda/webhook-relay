@@ -7,12 +7,14 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/CamilleOnoda/webhook-relay.git/internal/auth"
 	"github.com/CamilleOnoda/webhook-relay.git/internal/database"
 	"github.com/CamilleOnoda/webhook-relay.git/internal/service"
 	"github.com/google/uuid"
 )
 
+// Receive incoming webhooks for a specific endpoint and forward them to the target URL.
+// Require authenticated ownership.
+// Endpoint: POST /webhooks/{id}
 func (cfg *apiConfig) handlerReceiveWebhook(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 	if r.Method != http.MethodPost {
@@ -21,19 +23,12 @@ func (cfg *apiConfig) handlerReceiveWebhook(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	token, err := auth.GetBearerToken(r.Header)
-	if err != nil {
+	userIDFromToken, ok := r.Context().Value("userID").(uuid.UUID)
+	if !ok {
 		respondWithError(w, http.StatusUnauthorized,
-			"failed to get token", err)
+			"Invalid user ID in token", nil)
 		return
 	}
-	userIDFromToken, err := auth.ValidateJWT(token, cfg.jwt_secret)
-	if err != nil {
-		respondWithError(w, http.StatusUnauthorized,
-			"failed to validate token", err)
-		return
-	}
-
 	userID := uuid.NullUUID{
 		UUID:  userIDFromToken,
 		Valid: true,
@@ -42,16 +37,18 @@ func (cfg *apiConfig) handlerReceiveWebhook(w http.ResponseWriter, r *http.Reque
 	endpointID := r.PathValue("id")
 	id, err := uuid.Parse(endpointID)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid endpoint ID forma", err)
+		respondWithError(w, http.StatusBadRequest,
+			"Invalid endpoint ID format", err)
 		return
 	}
 
-	endpoint, err := cfg.db.GetEndpointByIDAndUserID(r.Context(), database.GetEndpointByIDAndUserIDParams{
-		ID:     id,
-		UserID: userID,
-	})
+	endpoint, err := cfg.db.GetEndpointByIDAndUserID(r.Context(),
+		database.GetEndpointByIDAndUserIDParams{
+			ID:     id,
+			UserID: userID,
+		})
 	if err != nil {
-		respondWithError(w, http.StatusNotFound, "endpoint not found", err)
+		respondWithError(w, http.StatusNotFound, "Endpoint not found", err)
 		return
 	}
 
@@ -61,14 +58,14 @@ func (cfg *apiConfig) handlerReceiveWebhook(w http.ResponseWriter, r *http.Reque
 	eventPayload, err := io.ReadAll(rawStream)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest,
-			"failed to read request body", err)
+			"Failed to read request body", err)
 		return
 	}
 
 	marshaledHeaders, err := json.Marshal(r.Header)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError,
-			"failed to marshal headers", err)
+			"Failed to marshal headers", err)
 		return
 	}
 
@@ -81,7 +78,7 @@ func (cfg *apiConfig) handlerReceiveWebhook(w http.ResponseWriter, r *http.Reque
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError,
-			"failed to store event", err)
+			"Failed to store event", err)
 		return
 	}
 
@@ -92,7 +89,7 @@ func (cfg *apiConfig) handlerReceiveWebhook(w http.ResponseWriter, r *http.Reque
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError,
-			"failed to create delivery", err)
+			"Failed to create delivery", err)
 		return
 	}
 
@@ -116,11 +113,12 @@ func (cfg *apiConfig) handlerReceiveWebhook(w http.ResponseWriter, r *http.Reque
 		DeliveryDurationMs: attemptResult.DeliveryDurationMs,
 	}); err != nil {
 		respondWithError(w, http.StatusInternalServerError,
-			"failed to update delivery record", err)
+			"Failed to update delivery record", err)
 		return
 	}
 
-	w.WriteHeader(http.StatusAccepted)
-	w.Write([]byte("event accepted successfully"))
+	respondWithJSON(w, http.StatusAccepted, map[string]string{
+		"message": "Event received and delivery attempted",
+	})
 
 }

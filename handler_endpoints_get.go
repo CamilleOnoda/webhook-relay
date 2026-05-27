@@ -3,7 +3,6 @@ package main
 import (
 	"net/http"
 
-	"github.com/CamilleOnoda/webhook-relay.git/internal/auth"
 	"github.com/CamilleOnoda/webhook-relay.git/internal/database"
 	"github.com/google/uuid"
 )
@@ -13,32 +12,27 @@ import (
 func (cfg *apiConfig) handlerGetEndpoints(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodGet {
-		respondWithError(w, http.StatusMethodNotAllowed, "Method not allowed", nil)
+		respondWithError(w, http.StatusMethodNotAllowed,
+			"Method not allowed", nil)
 		return
 	}
 
-	token, err := auth.GetBearerToken(r.Header)
-	if err != nil {
+	userIDFromToken, ok := r.Context().Value("userID").(uuid.UUID)
+	if !ok {
 		respondWithError(w, http.StatusUnauthorized,
-			"failed to get token", err)
+			"Invalid user ID in token", nil)
 		return
 	}
-	userIDFromToken, err := auth.ValidateJWT(token, cfg.jwt_secret)
-	if err != nil {
-		respondWithError(w, http.StatusUnauthorized,
-			"failed to validate token", err)
-		return
-	}
-
 	userID := uuid.NullUUID{
 		UUID:  userIDFromToken,
 		Valid: true,
 	}
 
 	var endpoints []database.WebhookEndpoint
-	endpoints, err = cfg.db.GetEndpointsByUserID(r.Context(), userID)
+	endpoints, err := cfg.db.GetEndpointsByUserID(r.Context(), userID)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to list endpoints", err)
+		respondWithError(w, http.StatusInternalServerError,
+			"Failed to list endpoints", err)
 		return
 	}
 

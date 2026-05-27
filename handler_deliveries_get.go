@@ -18,17 +18,30 @@ type Delivery struct {
 	DeliveryDurationMs *int32    `json:"delivery_duration_ms"`
 }
 
-func (cfg *apiConfig) handlerListDeliveries(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) handlerListDeliveriesByUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodGet {
-		respondWithError(w, http.StatusMethodNotAllowed, "Method not allowed", nil)
+		respondWithError(w, http.StatusMethodNotAllowed,
+			"Method not allowed", nil)
 		return
 	}
 
-	var deliveries []database.ListDeliveriesRow
-	deliveries, err := cfg.db.ListDeliveries(r.Context())
+	userIDFromToken, ok := r.Context().Value("userID").(uuid.UUID)
+	if !ok {
+		respondWithError(w, http.StatusUnauthorized,
+			"Invalid user ID in token", nil)
+		return
+	}
+	userID := uuid.NullUUID{
+		UUID:  userIDFromToken,
+		Valid: true,
+	}
+
+	var deliveries []database.ListDeliveriesByUserRow
+	deliveries, err := cfg.db.ListDeliveriesByUser(r.Context(), userID)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "failed to list deliveries", err)
+		respondWithError(w, http.StatusInternalServerError,
+			"Failed to list deliveries", err)
 		return
 	}
 
