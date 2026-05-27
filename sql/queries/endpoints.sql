@@ -3,6 +3,10 @@ INSERT INTO webhook_endpoints (name, target_url, description, user_id)
 VALUES ($1, $2, $3, $4)
 RETURNING *;
 
+-- name: GetEndpointByID :one
+SELECT * FROM webhook_endpoints
+WHERE id = $1;
+
 -- name: GetEndpointByIDAndUserID :one
 SELECT * FROM webhook_endpoints
 WHERE id = $1
