@@ -23,21 +23,21 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	dbUser, err := cfg.db.GetUserByEmail(r.Context(), req.Email)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError,
-			"failed to fetch user", err)
+			"Failed to find user", err)
 		return
 	}
 
 	correctPassword, err := auth.CheckPassword(req.Password, dbUser.HashedPassword)
 	if err != nil || !correctPassword {
 		respondWithError(w, http.StatusUnauthorized,
-			"incorrect email or password", err)
+			"Incorrect email or password", err)
 		return
 	}
 
 	token, err := auth.MakeJWT(dbUser.ID, cfg.jwt_secret, time.Hour)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError,
-			"failed to create token", err)
+			"Failed to create token", err)
 		return
 	}
 
@@ -48,6 +48,7 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: dbUser.CreatedAt,
 		UpdatedAt: dbUser.UpdatedAt,
 		Token:     token,
+		IsAdmin:   dbUser.IsAdmin,
 	}
 
 	respondWithJSON(w, http.StatusOK, responseUser)
