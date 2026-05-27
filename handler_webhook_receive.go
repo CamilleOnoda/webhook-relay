@@ -13,7 +13,6 @@ import (
 )
 
 // Receive incoming webhooks for a specific endpoint and forward them to the target URL.
-// Require authenticated ownership.
 // Endpoint: POST /webhooks/{id}
 func (cfg *apiConfig) handlerReceiveWebhook(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
@@ -21,17 +20,6 @@ func (cfg *apiConfig) handlerReceiveWebhook(w http.ResponseWriter, r *http.Reque
 		respondWithError(w, http.StatusMethodNotAllowed,
 			"Method not allowed", nil)
 		return
-	}
-
-	userIDFromToken, ok := r.Context().Value("userID").(uuid.UUID)
-	if !ok {
-		respondWithError(w, http.StatusUnauthorized,
-			"Invalid user ID in token", nil)
-		return
-	}
-	userID := uuid.NullUUID{
-		UUID:  userIDFromToken,
-		Valid: true,
 	}
 
 	endpointID := r.PathValue("id")
@@ -42,11 +30,7 @@ func (cfg *apiConfig) handlerReceiveWebhook(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	endpoint, err := cfg.db.GetEndpointByIDAndUserID(r.Context(),
-		database.GetEndpointByIDAndUserIDParams{
-			ID:     id,
-			UserID: userID,
-		})
+	endpoint, err := cfg.db.GetEndpointByID(r.Context(), id)
 	if err != nil {
 		respondWithError(w, http.StatusNotFound, "Endpoint not found", err)
 		return
