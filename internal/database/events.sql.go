@@ -46,33 +46,35 @@ func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (Webho
 	return i, err
 }
 
-const listEvents = `-- name: ListEvents :many
+const listEventsByUser = `-- name: ListEventsByUser :many
 SELECT
     webhook_events.id,
     webhook_endpoints.name AS endpoint_name,
     webhook_events.event_type,
     webhook_events.received_at
 FROM webhook_events
-JOIN webhook_endpoints ON webhook_events.endpoint_id = webhook_endpoints.id
+JOIN webhook_endpoints
+    ON webhook_events.endpoint_id = webhook_endpoints.id
+WHERE webhook_endpoints.user_id = $1
 ORDER BY webhook_events.received_at DESC
 `
 
-type ListEventsRow struct {
+type ListEventsByUserRow struct {
 	ID           uuid.UUID
 	EndpointName string
 	EventType    sql.NullString
 	ReceivedAt   time.Time
 }
 
-func (q *Queries) ListEvents(ctx context.Context) ([]ListEventsRow, error) {
-	rows, err := q.db.QueryContext(ctx, listEvents)
+func (q *Queries) ListEventsByUser(ctx context.Context, userID uuid.NullUUID) ([]ListEventsByUserRow, error) {
+	rows, err := q.db.QueryContext(ctx, listEventsByUser, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListEventsRow
+	var items []ListEventsByUserRow
 	for rows.Next() {
-		var i ListEventsRow
+		var i ListEventsByUserRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.EndpointName,

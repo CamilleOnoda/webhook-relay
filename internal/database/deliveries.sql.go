@@ -64,7 +64,7 @@ func (q *Queries) CreateDelivery(ctx context.Context, arg CreateDeliveryParams) 
 	return i, err
 }
 
-const listDeliveries = `-- name: ListDeliveries :many
+const listDeliveriesByUser = `-- name: ListDeliveriesByUser :many
 SELECT 
     deliveries.id,
     webhook_endpoints.name AS endpoint_name,
@@ -76,10 +76,11 @@ SELECT
 FROM deliveries
 JOIN webhook_events ON deliveries.event_id = webhook_events.id
 JOIN webhook_endpoints ON webhook_events.endpoint_id = webhook_endpoints.id
+WHERE webhook_endpoints.user_id = $1
 ORDER BY deliveries.created_at DESC
 `
 
-type ListDeliveriesRow struct {
+type ListDeliveriesByUserRow struct {
 	ID                 uuid.UUID
 	EndpointName       string
 	TargetUrl          string
@@ -89,15 +90,15 @@ type ListDeliveriesRow struct {
 	DeliveryDurationMs sql.NullInt32
 }
 
-func (q *Queries) ListDeliveries(ctx context.Context) ([]ListDeliveriesRow, error) {
-	rows, err := q.db.QueryContext(ctx, listDeliveries)
+func (q *Queries) ListDeliveriesByUser(ctx context.Context, userID uuid.NullUUID) ([]ListDeliveriesByUserRow, error) {
+	rows, err := q.db.QueryContext(ctx, listDeliveriesByUser, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListDeliveriesRow
+	var items []ListDeliveriesByUserRow
 	for rows.Next() {
-		var i ListDeliveriesRow
+		var i ListDeliveriesByUserRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.EndpointName,

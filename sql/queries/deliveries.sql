@@ -27,7 +27,7 @@ SET
 END
 WHERE id = $1;
 
--- name: ListDeliveries :many
+-- name: ListDeliveriesByUser :many
 SELECT 
     deliveries.id,
     webhook_endpoints.name AS endpoint_name,
@@ -39,4 +39,5 @@ SELECT
 FROM deliveries
 JOIN webhook_events ON deliveries.event_id = webhook_events.id
 JOIN webhook_endpoints ON webhook_events.endpoint_id = webhook_endpoints.id
+WHERE webhook_endpoints.user_id = $1
 ORDER BY deliveries.created_at DESC;
