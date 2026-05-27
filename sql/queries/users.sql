@@ -5,3 +5,6 @@ RETURNING *;
 
 -- name: DeleteUsers :exec
 DELETE FROM users;
+
+-- name: IsUserAdmin :one
+SELECT is_admin FROM users WHERE id = $1;

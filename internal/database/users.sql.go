@@ -7,6 +7,8 @@ package database
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 const createUser = `-- name: CreateUser :one
@@ -43,4 +45,15 @@ DELETE FROM users
 func (q *Queries) DeleteUsers(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, deleteUsers)
 	return err
+}
+
+const isUserAdmin = `-- name: IsUserAdmin :one
+SELECT is_admin FROM users WHERE id = $1
+`
+
+func (q *Queries) IsUserAdmin(ctx context.Context, id uuid.UUID) (bool, error) {
+	row := q.db.QueryRowContext(ctx, isUserAdmin, id)
+	var is_admin bool
+	err := row.Scan(&is_admin)
+	return is_admin, err
 }
