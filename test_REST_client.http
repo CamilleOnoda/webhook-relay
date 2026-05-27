@@ -1,11 +1,10 @@
+### Delete all users - admin only
+DELETE http://localhost:8080/admin/users/delete HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3ZWJob29rLXJlbGF5Iiwic3ViIjoiZGE0NmVkMTktOGU0ZC00YzU1LWEwZjUtZGIwZGRlYjYyZWYxIiwiZXhwIjoxNzc5ODY2MjQxLCJpYXQiOjE3Nzk4NjI2NDF9.yKsqGXS2ENUUN4rQhD2P5VKhvU4Z2gQZ4upUiZgUXG8
+
 ### Delete all endpoints - admin endpoint
 DELETE http://localhost:8080/admin/endpoints/delete HTTP/1.1
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3ZWJob29rLXJlbGF5Iiwic3ViIjoiYTliY2JjNTktMWUzZS00ZGE3LWFiNTAtMWYyN2JkNDNhYzAwIiwiZXhwIjoxNzc5ODYwNjIzLCJpYXQiOjE3Nzk4NTcwMjN9.qxY-ptmic45tniyw_n4DwLtyB86T5jzWHA103ofxy7Y
-
-### Delete all users - admin endpoint
-DELETE http://localhost:8080/admin/users/delete HTTP/1.1
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3ZWJob29rLXJlbGF5Iiwic3ViIjoiYTliY2JjNTktMWUzZS00ZGE3LWFiNTAtMWYyN2JkNDNhYzAwIiwiZXhwIjoxNzc5ODYwNjIzLCJpYXQiOjE3Nzk4NTcwMjN9.qxY-ptmic45tniyw_n4DwLtyB86T5jzWHA103ofxy7Y
-
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3ZWJob29rLXJlbGF5Iiwic3ViIjoiZGE0NmVkMTktOGU0ZC00YzU1LWEwZjUtZGIwZGRlYjYyZWYxIiwiZXhwIjoxNzc5ODY2MjQxLCJpYXQiOjE3Nzk4NjI2NDF9.yKsqGXS2ENUUN4rQhD2P5VKhvU4Z2gQZ4upUiZgUXG8
 
 ### Create user 1
 POST http://localhost:8080/api/users HTTP/1.1
@@ -44,6 +43,15 @@ Content-Type: application/json
 {
   "email": "test@me.com",
   "password": "testpassword"
+}
+
+### Login admin
+POST http://localhost:8080/api/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "email": "admin@test.com",
+  "password": "1234"
 }
 
 
