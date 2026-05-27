@@ -71,6 +71,27 @@ func (q *Queries) DeleteEndpointByIDAndUserID(ctx context.Context, arg DeleteEnd
 	return err
 }
 
+const getEndpointByID = `-- name: GetEndpointByID :one
+SELECT id, name, target_url, is_active, created_at, updated_at, description, user_id FROM webhook_endpoints
+WHERE id = $1
+`
+
+func (q *Queries) GetEndpointByID(ctx context.Context, id uuid.UUID) (WebhookEndpoint, error) {
+	row := q.db.QueryRowContext(ctx, getEndpointByID, id)
+	var i WebhookEndpoint
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.TargetUrl,
+		&i.IsActive,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Description,
+		&i.UserID,
+	)
+	return i, err
+}
+
 const getEndpointByIDAndUserID = `-- name: GetEndpointByIDAndUserID :one
 SELECT id, name, target_url, is_active, created_at, updated_at, description, user_id FROM webhook_endpoints
 WHERE id = $1
