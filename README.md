@@ -39,7 +39,7 @@ It focuses heavily on HTTP fundamentals and webhook forwarding behavior.
       <img src="assets/webhook-diagram.png" height="350" width="350">
     </td>
     <td align="center">
-      <img src="assets/webhook-relay-demo.gif" height="350" width="350">
+      <img src="assets/webhook.gif" height="350" width="350">
     </td>
   </tr>
 </table>
