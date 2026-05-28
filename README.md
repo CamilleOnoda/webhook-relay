@@ -1,14 +1,22 @@
 # Webhook Relay Service
 
-A webhook relay service written in Go. It allows users to create webhook endpoints, 
-receive incoming webhook events,<br>store them in PostgreSQL, 
-and forward them to a configured target URL.
+A webhook relay service written in Go.
 
-This project demonstrates backend fundamentals such as HTTP routing,
- JSON APIs, database persistence, webhook handling,<br>request forwarding, 
- delivery tracking, and basic frontend integration.
+This project allows users to create webhook endpoints, receive incoming webhook events, store them in PostgreSQL, and forward them to configured target URLs while tracking delivery results and request metadata.
 
-It focuses heavily on HTTP fundamentals and webhook forwarding behavior.
+The project focuses heavily on backend fundamentals such as:
+
+- HTTP routing and request handling
+- Webhook forwarding behavior
+- JSON APIs
+- PostgreSQL persistence
+- Authentication and authorization
+- Header filtering and request safety
+- Delivery tracking and service architecture
+
+---
+
+## Screenshots
 
 <table>
   <tr>
@@ -21,17 +29,72 @@ It focuses heavily on HTTP fundamentals and webhook forwarding behavior.
   </tr>
 </table>
 
-## Webhook flow and Demo
-1. A client registers a webhook endpoint with:
-   `POST /api/endpoints`
+---
+
+# Features
+
+## Webhook endpoints
+
+- Create webhook endpoints
+- Generate unique UUID-based webhook URLs
+- Store endpoint metadata in PostgreSQL
+- Delete endpoints and related webhook data
+
+## Webhook processing
+
+- Receive incoming webhook events
+- Store payloads and headers
+- Forward requests to external target URLs
+- Filter unsafe and hop-by-hop headers
+- Track delivery status and duration
+- Store response metadata and errors
+
+## Authentication
+
+- User registration
+- User login
+- Password hashing
+- JWT authentication
+- Protected API routes
+- Admin-only routes
+
+## Frontend dashboard
+
+A lightweight frontend is included for manual testing and endpoint management.
+
+Built using:
+
+- HTML
+- CSS
+- Vanilla JavaScript
+- fetch()
+
+The frontend supports:
+
+- Creating endpoints
+- Listing endpoints
+- Deleting endpoints
+- Sending test webhooks
+- Viewing webhook events
+- Viewing delivery history
+
+---
+
+# Webhook Flow
+
+1. A user creates a webhook endpoint through the API
 2. The relay generates a unique webhook URL:
-   `/webhooks/{endpoint_id}`
-3. External services send webhook events to that generated URL
+
+```text
+/webhooks/{endpoint_id}
+```
+
+3. External services send webhook events to that URL
 4. The relay validates the endpoint ID
-5. The incoming payload and headers are stored in PostgreSQL
-6. Unsafe or hop-by-hop headers are filtered out
-7. The webhook request is forwarded to the configured target URL
-8. Delivery results (status, duration, errors, response data) are stored for later inspection
+5. The incoming payload and headers are stored
+6. Unsafe headers are filtered
+7. The webhook is forwarded to the configured target URL
+8. Delivery results are stored for later inspection
 
 <table>
   <tr>
@@ -44,235 +107,367 @@ It focuses heavily on HTTP fundamentals and webhook forwarding behavior.
   </tr>
 </table>
 
-## Prerequisites and setup
+---
 
-This project requires:
+# Tech Stack
+
+## Backend
+
+- Go
+- net/http
+- PostgreSQL
+- sqlc
+- Goose
+
+## Frontend
+
+- HTML
+- CSS
+- Vanilla JavaScript
+
+## Infrastructure
+
+- Railway
+- PostgreSQL
+- GitHub
+
+---
+
+# Project Structure
+
+```text
+├── assets
+├── internal
+│   ├── auth
+│   ├── database
+│   └── service
+├── static
+├── sql
+│   └── schema
+├── .env
+├── .gitignore
+├── admin_middleware.go
+├── auth_middleware.go
+├── create_endpoint_test.go
+├── go.mod
+├── handler_deliveries_get.go
+├── handler_endpoint_create.go
+├── handler_endpointByID_delete.go
+├── handler_endpointByID_get.go
+├── handler_endpoints_delete.go
+├── handler_endpoints_get.go
+├── handler_events_get.go
+├── handler_login.go
+├── handler_users_create.go
+├── handler_users_delete.go
+├── handler_webhook_receive.go
+├── json.go
+├── main.go
+├── readiness.go
+├── README.md
+├── sqlc.yaml
+├── test_REST_client.http
+└── webhook-relay.git
+```
+
+## Important files
+
+| File | Responsibility |
+|---|---|
+| `main.go` | Starts the server and registers routes |
+| `json.go` | Shared JSON response helpers |
+| `readiness.go` | Health check handler |
+| `auth_middleware.go` | JWT authentication middleware |
+| `admin_middleware.go` | Admin authorization middleware |
+| `handler_login.go` | User login and JWT generation |
+| `handler_users_create.go` | User registration |
+| `handler_users_delete.go` | Admin route for deleting users |
+| `handler_endpoint_create.go` | Create a new webhook endpoint for the authenticated user |
+| `handler_endpoints_get.go` | Lists webhook endpoints for the authenticated user |
+| `handler_endpointByID_get.go` | Gets a specific endpoint by its ID for the authenticated user |
+| `handler_endpointByID_delete.go` | Deletes a specific endpoint by ID for the authenticated user |
+| `handler_endpoints_delete.go` | Admin endpoint cleanup route |
+| `handler_webhook_receive.go` | Receives incoming webhook requests |
+| `handler_events_get.go` | Lists all webhook events for the authenticated user |
+| `handler_deliveries_get.go` | Lists delivery history for the authenticated user |
+| `internal/auth` | Password hashing and JWT validation |
+| `internal/database` | sqlc-generated database layer |
+| `internal/service` | Webhook forwarding and header filtering |
+| `sql/schema` | Goose database migrations |
+| `static` | Frontend files |
+| `test_REST_client.http` | Manual API testing scenarios |
+```
+
+---
+
+# Setup
+
+## Prerequisites
 
 - Go
 - PostgreSQL
-- Goose for database migrations
-- sqlc for generated database code
+- Goose
+- sqlc
 
-### Clone the repository
+---
+
+## Clone the repository
 
 ```bash
 git clone https://github.com/CamilleOnoda/webhook-relay.git
 cd webhook-relay
 ```
 
-### Install dependencies
+---
+
+## Install dependencies
+
 ```bash
 go mod download
 ```
 
-### Set up environment variables
-Create a .env file:
-```bash
+---
+
+## Environment variables
+
+Create a `.env` file:
+
+```env
 DB_URL=postgres://username:password@localhost:5432/webhook_relay?sslmode=disable
 PORT=8080
 BASE_URL=http://localhost:8080
+JWT_SECRET=your_secret
 ```
 
-### Run database migrations
+---
+
+## Run database migrations
+
 ```bash
 goose -dir sql/schema postgres "$DB_URL" up
 ```
 
-### Generate sqlc code
+---
+
+## Generate sqlc code
+
 ```bash
 sqlc generate
 ```
 
-### Run the server
+---
+
+## Run the server
+
 ```bash
 go run .
 ```
-The API should be available at:
-```bash
+
+The API should now be available at:
+
+```text
 http://localhost:8080
 ```
 
-## Project overview
-This service lets you:
+---
 
-- Create webhook endpoints
-- Generate a public webhook URL for each endpoint
-- Receive webhook requests
-- Store webhook payloads and headers
-- Forward webhook events to a target URL
-- Track delivery status and response data
-- View endpoints and delivery history
-- Delete endpoints and related webhook data
+# API Overview
 
-## API features
-#### Health check
-```bash
+## Health check
+
+```http
 GET /api/health
 ```
-Returns a simple readiness response.
 
-#### Create a webhook endpoint
+Returns a readiness response.
+
+---
+
+## Create user
+
+```http
+POST /api/users
+```
+
+Example:
+
+```json
+{
+  "name": "Test User",
+  "email": "test@example.com",
+  "password": "password"
+}
+```
+
+---
+
+## Login
+
+```http
+POST /api/login
+```
+
+Returns a JWT token.
+
+---
+
+## Create endpoint
+
 ```bash
 curl -X POST http://localhost:8080/api/endpoints \
+-H "Authorization: Bearer YOUR_TOKEN" \
 -H "Content-Type: application/json" \
 -d '{
   "name": "Test endpoint",
   "target_url": "https://httpbin.org/post"
 }'
 ```
+
 Example response:
 
 ```json
 {
   "id": "6d8e487d-1cd8-4bed-96a5-fbc98cde79be",
-  "name": "httpbin success test",
+  "name": "Test endpoint",
   "target_url": "https://httpbin.org/post",
   "generated_url": "http://localhost:8080/webhooks/6d8e487d-1cd8-4bed-96a5-fbc98cde79be"
 }
 ```
 
-#### List endpoints
-```bash
-curl http://localhost:8080/api/endpoints
-```
-Returns all configured webhook endpoints.
+---
 
-#### Get endpoint by ID
-```bash
-GET /api/endpoints/{id}
-```
-Returns a single endpoint.
+## Receive webhook
 
-#### Delete endpoint by ID
 ```bash
-DELETE /api/endpoints/{id}
-```
-Deletes an endpoint and its related webhook data.
-
-#### Delete all endpoints
-```bash
-curl -X DELETE http://localhost:8080/admin/endpoints/delete
-```
-Deletes all endpoints and related webhook data.
-
-#### Receive webhook
-```bash
-curl -X POST http://localhost:8080/webhooks/6d8e487d-1cd8-4bed-96a5-fbc98cde79be \
+curl -X POST http://localhost:8080/webhooks/{endpoint_id} \
 -H "Content-Type: application/json" \
 -H "X-Event-Type: user.created" \
 -d '{
   "message": "hello"
 }'
 ```
-Receives an incoming webhook event, stores the payload and headers, then attempts delivery to the endpoint target URL.
 
-#### List deliveries
-```bash
-curl http://localhost:8080/api/deliveries
-```
-Returns webhook delivery history.
+The relay stores the event and forwards it to the configured target URL.
 
-#### Example failing delivery
+---
 
-Create an endpoint pointing to an HTTP 500 target:
+## List endpoints
 
-```bash
-curl -X POST http://localhost:8080/api/endpoints \
--H "Content-Type: application/json" \
--d '{
-  "name": "httpbin failure test",
-  "target_url": "https://httpbin.org/status/500",
-  "description": "500 status code test"
-}'
+```http
+GET /api/endpoints
 ```
 
-## Frontend
+---
 
-A lightweight frontend is included for endpoint management and manual webhook testing.
-It uses:
+## List deliveries
 
-- HTML
-- CSS
-- Vanilla JavaScript
-- fetch()
+```http
+GET /api/deliveries
+```
 
-#### The frontend can:
+---
 
-- List endpoints
-- Create endpoints
-- Delete endpoints
-- Send test webhooks
-- View delivery/event history
+# Header Filtering
 
-## Architecture and design
-- main.go: Starts the server and registers routes
-- json.go: Shared JSON response helpers
-- readiness.go: Health check handler
-- handler_endpoint_create.go: Creates webhook endpoints
-- handler_endpoints_get.go: Lists endpoints
-- handler_endpointsByID_get.go: Gets one endpoint by ID
-- handler_endpointByID_delete.go: Deletes one endpoint
-- handler_webhook_receive.go: Receives incoming webhook requests
-- handler_deliveries_get.go: Lists webhook delivery records
-- internal/database: sqlc-generated database access code
-- internal/service: Webhook delivery and header filtering logic
-- sql/schema: Database migrations
-- static: Basic frontend files
-- test_REST_client.http: Manual API testing requests
+Before forwarding requests, the relay removes unsafe and hop-by-hop headers such as:
 
-## Key patterns
-- HTTP handlers separated by responsibility
-- PostgreSQL persistence with sqlc-generated queries
-- Database migrations with Goose
-- UUID-based webhook endpoint URLs
-- JSON request/response handling
-- Request header filtering before forwarding
-- Delivery status tracking
-- Clear separation between API handlers, database access, and service logic
-- Simple frontend for manual testing and demonstration
+- Host
+- Content-Length
+- Transfer-Encoding
+- Connection
+- Keep-Alive
 
-## What I learned
+This prevents forwarding invalid transport-level metadata to downstream services.
+
+---
+
+# What I Learned
+
 This project helped me better understand:
+
 - HTTP request/response lifecycle
-- Webhook delivery patterns
-- JSON payload handling
-- Forwarding requests safely
-- Hop-by-hop and unsafe headers
-- PostgreSQL persistence with sqlc
-- Database migrations with Goose
+- Webhook architecture
+- Request forwarding behavior
+- Hop-by-hop headers
+- JSON serialization
+- JWT authentication
+- PostgreSQL persistence
+- Database migrations
+- sqlc-generated queries
 - UUID-based routing
-- Delivery tracking and retry-oriented design
+- Delivery tracking patterns
+- Frontend/backend integration
+- Deployment workflows using Railway
 
-## Post MVP roadmap
-Improvements after the initial MVP:
+---
 
-- Authentication and user accounts
-  - Associate endpoints with users
-  - Protect endpoint management routes
+# Post-MVP Roadmap
 
-- Webhook signature verification
-  - Verify incoming requests using shared secrets
-  - Reject spoofed or unauthorized webhook events
+## Authentication and session management
 
-- Queue-based delivery system
-  - Move delivery attempts to a background worker
-  - Avoid blocking the webhook receiver while forwarding requests
+- Token refresh and revocation flows
+- Refresh token rotation
+- Session expiration management
+- Logout and token validation
+- Persistent session tracking
 
-- Retry logic
-  - Retry failed deliveries with backoff
-  - Track retry attempts and final delivery state
+## Delivery system
 
-- Concurrency control
-  - Limit simultaneous delivery attempts
-  - Prevent one slow target from affecting the whole service
+- Background worker queue
+- Retry logic with backoff
+- Delivery attempt limits
+- Dead-letter handling for failed deliveries that exceed retry limits, allowing problematic events<br>to be isolated and inspected without blocking the rest of the system
+- Async delivery processing to improve responsiveness<br>
+  and ensure webhook deliveries do not block API requests
 
-- Endpoint secrets
-  - Generate a secret per endpoint
-  - Use it for signing or validating webhook requests
+## Security
 
-- Delivery filtering
-  - Allow endpoints to subscribe only to specific event types
+- Webhook signature verification to ensure incoming webhook requests are genuinely sent<br>by the platform and have not been tampered with during transit
+- Endpoint secrets that allow each webhook consumer to authenticate requests<br>using a shared secret unique to their endpoint
+- Request validation improvements to strengthen payload validation, enforce schema consistency,<br>and reduce the risk of malformed or malicious requests
 
-- Better observability
-  - Add structured logs
-  - Add metrics for successful and failed deliveries
+## Scalability
+
+- Concurrency control to manage how many delivery jobs run at the same time,<br>preventing system overload and ensuring stable performance under heavy traffic
+- Rate limiting to restrict how frequently clients or endpoints can send requests,<br>protecting the service from abuse and maintaining reliability
+- Delivery worker pools to process webhook deliveries asynchronously using multiple workers,<br>improving efficiency and reducing delivery delays
+- Improved request throughput through performance optimizations that allow the system to handle<br>a larger number of requests and deliveries simultaneously
+
+## Observability
+
+- Structured logs to make debugging and tracing requests easier across services
+- Metrics collection for tracking delivery success rates, latency, throughput, and system health
+- Monitoring and alerting to detect failures, downtime, or performance degradation in real time
+- Improved error tracing to better identify where and why delivery failures occur
+- Delivery diagnostics tools for inspecting webhook attempts, responses, retries, and failure details
+
+## API improvements
+
+- Event filtering by type
+- Pagination
+- Search and filtering events, endpoints, or delivery attempts
+- Better delivery inspection tools
+- Add delivery retry endpoints that allow failed webhook deliveries to be manually retried
+---
+
+# Deployment
+
+The service is deployed using:
+
+- Railway
+- PostgreSQL
+- Goose migrations
+
+The deployment process included:
+
+- Environment variable configuration
+- Production database migrations
+- Public API routing
+- Frontend/backend integration
+- Git history recovery and safe force-pushing
+
+---
+
+# License
+
+MIT
