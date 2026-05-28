@@ -16,6 +16,20 @@ The project focuses heavily on backend fundamentals such as:
 
 ---
 
+## Table of Contents
+
+- [Features](#features)
+- [Webhook Flow](#webhook-flow)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Setup](#setup)
+- [API Overview](#api-overview)
+- [Header Filtering](#header-filtering)
+- [What I Learned](#what-i-learned)
+- [Post-MVP Roadmap](#post-mvp-roadmap)
+- [Deployment](#deployment)
+- [License](#license)
+
 ## Screenshots
 
 <table>
@@ -171,7 +185,7 @@ The frontend supports:
 ```
 
 ## Important files
-
+```text
 | File | Responsibility |
 |---|---|
 | `main.go` | Starts the server and registers routes |
@@ -201,7 +215,6 @@ The frontend supports:
 ---
 
 # Setup
-
 ## Prerequisites
 
 - Go
@@ -209,7 +222,6 @@ The frontend supports:
 - Goose
 - sqlc
 
----
 
 ## Clone the repository
 
@@ -217,8 +229,6 @@ The frontend supports:
 git clone https://github.com/CamilleOnoda/webhook-relay.git
 cd webhook-relay
 ```
-
----
 
 ## Install dependencies
 
