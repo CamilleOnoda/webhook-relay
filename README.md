@@ -13,10 +13,10 @@ It focuses heavily on HTTP fundamentals and webhook forwarding behavior.
 <table>
   <tr>
     <td align="center">
-      <img src="assets/webhook-relay.png" height="350">
+      <img src="assets/login.png" height="320">
     </td>
     <td align="center">
-      <img src="assets/webhook-relay-.png" height="350">
+      <img src="assets/dashboard.png" height="350">
     </td>
   </tr>
 </table>
