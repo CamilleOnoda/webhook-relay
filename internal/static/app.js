@@ -116,6 +116,10 @@ const endpointForm = document.getElementById("endpoint-form");
 const deliveryList = document.getElementById("delivery-list");
 const eventList = document.getElementById("event-list");
 const logoutButton = document.getElementById("logout-button");
+const endpointCount = document.getElementById("endpoint-count");
+const eventCount = document.getElementById("event-count");
+const deliveryCount = document.getElementById("delivery-count");
+const endpointDetail = document.getElementById("endpoint-detail");
 
 if (endpointList) {
   if (!getToken()) {
@@ -134,8 +138,10 @@ if (logoutButton) {
   });
 }
 
+let selectedEndpoint = null;
+
 async function loadEndpoints() {
-  endpointList.innerHTML = "Loading...";
+  endpointList.textContent = "Loading...";
 
   try {
     const response = await authFetch("/api/endpoints");
@@ -145,46 +151,162 @@ async function loadEndpoints() {
     }
 
     const endpoints = await response.json();
+
+    endpointCount.textContent = endpoints.length;
     endpointList.innerHTML = "";
+    endpointDetail.innerHTML = "";
 
     if (endpoints.length === 0) {
-      endpointList.innerHTML = "No endpoints yet.";
+      endpointList.textContent = "No endpoints yet.";
+      endpointDetail.textContent = "Create an endpoint to see its details here.";
       return;
     }
 
-    for (const endpoint of endpoints) {
-      const div = document.createElement("div");
-      div.className = "endpoint";
+    endpoints.forEach((endpoint) => {
+      endpointList.appendChild(createEndpointRow(endpoint));
+    });
 
-      div.innerHTML = `
-        <p><strong>Endpoint name:</strong></p>
-        <p>${endpoint.name}</p>
+  selectedEndpoint = null;
+  endpointDetail.textContent = "Select an endpoint to view details.";
 
-        <p><strong>Webhook URL:</strong></p>
-        <p>${endpoint.generated_url}</p>
-
-        <p><strong>Description:</strong></p>
-        <p>${endpoint.description || "---"}</p>
-
-        <button class="send-button">Send Test Webhook</button>
-        <button class="delete-button">Delete</button>
-      `;
-
-      div.querySelector(".delete-button").addEventListener("click", async () => {
-        await deleteEndpoint(endpoint.id);
-      });
-
-      div.querySelector(".send-button").addEventListener("click", async () => {
-        await sendTestWebhook(endpoint.id, endpoint.name, div);
-      });
-
-      endpointList.appendChild(div);
-    }
   } catch (error) {
-    endpointList.innerHTML = "Failed to load endpoints.";
+    endpointList.textContent = "Failed to load endpoints.";
     message.textContent = error.message;
   }
 }
+
+function createEndpointRow(endpoint) {
+  const row = document.createElement("button");
+  row.type = "button";
+  row.className = "endpoint-list-row";
+
+  if (selectedEndpoint && endpoint.id === selectedEndpoint.id) {
+    row.classList.add("selected");
+  }
+
+  const name = document.createElement("span");
+  name.textContent = endpoint.name;
+
+  const status = document.createElement("span");
+  status.className = "endpoint-status";
+  status.textContent = endpoint.is_active ? "● Active" : "● Inactive";
+
+  row.append(name, status);
+
+  row.addEventListener("click", () => {
+    if (selectedEndpoint?.id === endpoint.id) {
+      selectedEndpoint = null;
+      updateSelectedEndpointRow(null);
+      endpointDetail.textContent = "Select an endpoint to view details.";
+      return;
+  }
+    selectedEndpoint = endpoint;
+    updateSelectedEndpointRow(row);
+    renderEndpointDetail(endpoint);
+  });
+
+  return row;
+}
+
+function updateSelectedEndpointRow(selectedRow) {
+  document.querySelectorAll(".endpoint-list-row").forEach((row) => {
+    row.classList.remove("selected");
+  });
+  if ( selectedRow) {
+    selectedRow.classList.add("selected");
+  }
+}
+
+function renderEndpointDetail(endpoint) {
+  endpointDetail.innerHTML = "";
+
+  const header = createEndpointDetailHeader(endpoint);
+  const url = createEndpointUrl(endpoint);
+
+  endpointDetail.append(header, url);
+}
+
+function createEndpointDetailHeader(endpoint) {
+  const header = document.createElement("div");
+  header.className = "endpoint-detail-header";
+
+  const title = document.createElement("h3");
+  title.textContent = endpoint.name;
+
+  const menu = createEndpointMenu(endpoint);
+
+  header.append(title, menu);
+
+  return header;
+}
+
+function createEndpointUrl(endpoint) {
+  const url = document.createElement("div");
+  url.className = "endpoint-url";
+  url.textContent = endpoint.generated_url;
+
+  return url;
+}
+
+function createEndpointMenu(endpoint) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "endpoint-menu-wrapper";
+
+  const menuButton = document.createElement("button");
+  menuButton.className = "menu-button";
+  menuButton.type = "button";
+  menuButton.textContent = "⋮";
+
+  const menu = document.createElement("div");
+  menu.className = "endpoint-menu hidden";
+
+  const sendButton = createMenuButton("Send test", async () => {
+    await sendTestWebhook(endpoint.id, endpoint.name, endpointDetail);
+  });
+
+  const copyButton = createMenuButton("Copy URL", async () => {
+    await navigator.clipboard.writeText(endpoint.generated_url);
+    message.textContent = "Webhook URL copied.";
+  });
+
+  const deleteButton = createMenuButton("Delete", async () => {
+    await deleteEndpoint(endpoint.id);
+  });
+
+  deleteButton.classList.add("danger");
+
+  menuButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    closeEndpointMenus();
+    menu.classList.toggle("hidden");
+  });
+
+  menu.append(sendButton, copyButton, deleteButton);
+  wrapper.append(menuButton, menu);
+
+  return wrapper;
+}
+
+function createMenuButton(label, action) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = label;
+
+  button.addEventListener("click", async () => {
+    await action();
+    closeEndpointMenus();
+  });
+
+  return button;
+}
+
+function closeEndpointMenus() {
+  document.querySelectorAll(".endpoint-menu").forEach((menu) => {
+    menu.classList.add("hidden");
+  });
+}
+
+document.addEventListener("click", closeEndpointMenus);
 
 endpointForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -307,6 +429,7 @@ async function loadEvents() {
     }
 
     const events = await response.json();
+    eventCount.textContent = events.length;
     eventList.innerHTML = "";
 
     if (events.length === 0) {
@@ -343,6 +466,7 @@ async function loadDeliveries() {
     }
 
     const deliveries = await response.json();
+    deliveryCount.textContent = deliveries.length;
     deliveryList.innerHTML = "";
 
     if (deliveries.length === 0) {

@@ -6,31 +6,36 @@
   <title>Webhook Relay - Login</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
-<body>
-  <main>
-    <h1>Webhook Relay</h1>
+<body class="auth-page">
+  <main class="auth-shell">
+    <section class="auth-card">
+      <div class="auth-header">
+        <h1>Webhook Relay</h1>
+        <p>Create webhook endpoints, inspect incoming events, and monitor deliveries.</p>
+      </div>
 
-    <p id="message"></p>
+      <div class="auth-grid">
+        <form id="login-form" class="auth-form">
+          <h2>Log in</h2>
 
-    <section>
-      <h2>Log in</h2>
+          <input id="login-email" type="email" placeholder="Email" required />
+          <input id="login-password" type="password" placeholder="Password" required />
 
-      <form id="login-form">
-        <input id="login-email" type="email" placeholder="Email" required />
-        <input id="login-password" type="password" placeholder="Password" required />
-        <button type="submit">Log in</button>
-      </form>
-    </section>
+          <button type="submit">Log in</button>
+        </form>
 
-    <section>
-      <h2>Register</h2>
+        <form id="register-form" class="auth-form">
+          <h2>Register</h2>
 
-      <form id="register-form">
-        <input id="register-name" type="text" placeholder="Name" required />
-        <input id="register-email" type="email" placeholder="Email" required />
-        <input id="register-password" type="password" placeholder="Password" required />
-        <button type="submit">Register</button>
-      </form>
+          <input id="register-name" type="text" placeholder="Name" required />
+          <input id="register-email" type="email" placeholder="Email" required />
+          <input id="register-password" type="password" placeholder="Password" required />
+
+          <button type="submit">Register</button>
+        </form>
+      </div>
+
+      <p id="message" class="message"></p>
     </section>
   </main>
 
