@@ -68,15 +68,25 @@ func main() {
 
 	mux.HandleFunc("/api/login", cfg.handlerLogin)
 
-	mux.Handle("DELETE /admin/users/delete",
+	mux.Handle("DELETE /admin/users/{id}",
 		cfg.authMiddleware(
 			cfg.adminMiddleware(
-				http.HandlerFunc(cfg.handlerDeleteUsers))))
+				http.HandlerFunc(cfg.handlerDeleteUserByID))))
 
-	mux.Handle("DELETE /admin/endpoints/delete",
+	mux.Handle("DELETE /admin/endpoints/delete/{id}",
 		cfg.authMiddleware(
 			cfg.adminMiddleware(
 				http.HandlerFunc(cfg.handlerDeleteAllEndpoints))))
+
+	mux.Handle("GET /admin/users",
+		cfg.authMiddleware(
+			cfg.adminMiddleware(
+				http.HandlerFunc(cfg.handlerGetUsers))))
+
+	mux.Handle("GET /admin/stats",
+		cfg.authMiddleware(
+			cfg.adminMiddleware(
+				http.HandlerFunc(cfg.handlerGetAdminStats))))
 
 	mux.Handle("DELETE /api/endpoints/{id}",
 		cfg.authMiddleware(
