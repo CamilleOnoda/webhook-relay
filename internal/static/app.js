@@ -16,6 +16,10 @@ function redirectToDashboard() {
   window.location.href = "/dashboard.html";
 }
 
+function redirectToAdminDashboard() {
+  window.location.href = "/admin.html";
+}
+
 function redirectToLogin() {
   window.location.href = "/";
 }
@@ -40,14 +44,8 @@ const loginForm = document.getElementById("login-form");
 const registerForm = document.getElementById("register-form");
 
 if (loginForm) {
-  if (getToken()) {
-    redirectToDashboard();
-  }
-
   loginForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-
-    console.log("Login button clicked");
     
     const email = document.getElementById("login-email").value;
     const password = document.getElementById("login-password").value;
@@ -67,10 +65,14 @@ if (loginForm) {
       }
 
       const data = await response.json();
-      console.log(data);
-
       setToken(data.token);
-      redirectToDashboard();
+      
+      if (data.is_admin) {
+        redirectToAdminDashboard();
+      } else {
+        redirectToDashboard();
+      }
+
     } catch (error) {
       message.textContent = error.message;
     }
@@ -117,9 +119,13 @@ const deliveryList = document.getElementById("delivery-list");
 const eventList = document.getElementById("event-list");
 const logoutButton = document.getElementById("logout-button");
 const endpointCount = document.getElementById("endpoint-count");
-const eventCount = document.getElementById("event-count");
 const deliveryCount = document.getElementById("delivery-count");
 const endpointDetail = document.getElementById("endpoint-detail");
+
+const userCount = document.getElementById("user-count");
+const eventCount = document.getElementById("event-count");
+const successfulDeliveryCount = document.getElementById("successful-delivery-count");
+const failedDeliveryCount = document.getElementById("failed-delivery-count");
 
 if (endpointList) {
   if (!getToken()) {
@@ -222,8 +228,12 @@ function renderEndpointDetail(endpoint) {
 
   const header = createEndpointDetailHeader(endpoint);
   const url = createEndpointUrl(endpoint);
-
-  endpointDetail.append(header, url);
+  if (endpoint.description) {
+    const desctiption = createEndpointDescription(endpoint);
+    endpointDetail.append(header, url, desctiption);
+  } else {
+    endpointDetail.append(header, url);
+  }
 }
 
 function createEndpointDetailHeader(endpoint) {
@@ -246,6 +256,14 @@ function createEndpointUrl(endpoint) {
   url.textContent = endpoint.generated_url;
 
   return url;
+}
+
+function createEndpointDescription(endpoint) {
+  const description = document.createElement("div");
+  description.className = "endpoint-description";
+  description.textContent = endpoint.description;
+
+  return description;
 }
 
 function createEndpointMenu(endpoint) {
@@ -493,4 +511,98 @@ async function loadDeliveries() {
     deliveryList.innerHTML = "Failed to load deliveries.";
     message.textContent = error.message;
   }
+}
+
+/* --------------
+   Admin specific
+----------------- */
+const userList = document.getElementById("admin-user-list");
+if (userList) {
+  loadUsers();
+  loadAdminStats();
+}
+async function loadAdminStats() {
+  const response = await authFetch("/admin/stats");
+
+  if (!response.ok) {
+    throw new Error("Failed to load admin stats");
+  }
+
+  const stats = await response.json();
+
+  userCount.textContent = stats.users;
+  eventCount.textContent = stats.events_received;
+  successfulDeliveryCount.textContent = stats.successful_deliveries;
+  failedDeliveryCount.textContent = stats.failed_deliveries;
+}
+
+async function loadUsers() {
+  try {
+    const response = await authFetch("/admin/users");
+
+    if (!response.ok) {
+      throw new Error("Failed to load users");
+    }
+
+    const users = await response.json()
+    userList.replaceChildren();
+    userCount.textContent = users.length;
+
+    for (const user of users) {
+      const row = document.createElement("tr");
+
+      const name = document.createElement("td");
+      name.textContent = user.name;
+
+      const email = document.createElement("td");
+      email.textContent = user.email;
+
+      const role = document.createElement("td");
+      const badge = document.createElement("span");
+      badge.textContent = user.is_admin ? "Admin" : "User";
+      badge.className = user.is_admin ? "role-admin" : "role-user";
+      role.appendChild(badge)
+
+      const created = document.createElement("td");
+      created.textContent = new Date(user.created_at).toLocaleDateString();
+
+      const actions = document.createElement("td");
+
+      const deleteButton = document.createElement("button");
+      deleteButton.textContent = "Delete";
+      deleteButton.className = "delete-button";
+
+      deleteButton.addEventListener("click", async () => {
+        await deleteUser(user.id);
+      });
+
+      actions.appendChild(deleteButton);
+
+      row.append(
+        name,
+        email,
+        role,
+        created,
+        actions,
+      );
+      userList.appendChild(row);
+    }
+  } catch (error) {
+    console.error(error);
+    message.textContent = error.message;
+  }
+}
+
+async function deleteUser(id) {
+  if (!confirm("Delete this user?")) {
+    return;
+  }
+  const response = await authFetch(`/admin/users/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    throw new Error("failed to delete users");
+  }
+  await loadUsers();
 }

@@ -45,7 +45,7 @@ body {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
@@ -75,9 +75,39 @@ body {
 }
 
 .stat-card strong {
-  font-size:1rem;
+  font-size:2rem;
   font-weight: 700;
   color: #172033;
+}
+
+.delete-button {
+  background: #eb4d4d;
+  color: white;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+.delete-button:hover {
+  background: #bc2b2b;
+}
+
+.admin-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+
+.role-admin,
+.role-user {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .dashboard-grid {
@@ -89,6 +119,11 @@ body {
 
 .card {
   padding: 1.5rem;
+}
+
+
+.card + .card {
+  margin-top: 1rem;
 }
 
 .section-heading {
@@ -386,4 +421,29 @@ button:hover {
   .auth-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/*Admin table */
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+
+.admin-table thead {
+  border-bottom: 2px solid #d1d5db;
+}
+
+.admin-table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.admin-table tbody tr:hover {
+  background: #f8fafc;
 }

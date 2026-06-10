@@ -11,7 +11,10 @@
   <main class="dashboard">
     <header class="dashboard-header">
       <div>
-        <p class="eyebrow">Webhook relay admin dashboard</p>
+        <p class="eyebrow">Webhook relay | Admin dashboard</p>
+        <p class="dashboard-subtitle">
+          Manage users, webhook endpoints, and inspect system activity
+        </p>
       </div>
 
       <button id="logout-button" class="secondary-button">Log out</button>
@@ -19,85 +22,83 @@
 
     <section class="stats-grid" aria-label="Dashboard overview">
       <article class="stat-card">
-        <span class="stat-label">Endpoints</span>
-        <strong id="endpoint-count">0</strong>
+        <span class="stat-label">Users</span>
+        <strong id="user-count">0</strong>
       </article>
 
       <article class="stat-card">
-        <span class="stat-label">Events</span>
+        <span class="stat-label">Events Received</span>
         <strong id="event-count">0</strong>
       </article>
 
       <article class="stat-card">
-        <span class="stat-label">Deliveries</span>
-        <strong id="delivery-count">0</strong>
+        <span class="stat-label">Successful Deliveries</span>
+        <strong id="successful-delivery-count">0</strong>
       </article>
+        <article class="stat-card">
+        <span class="stat-label">Failed Deliveries</span>
+        <strong id="failed-delivery-count">0</strong>
+        </article>
     </section>
 
     <p id="message" class="message"></p>
 
-    <section class="dashboard-grid">
-      <article class="card create-endpoint-card">
-        <div class="section-heading">
-          <h2>Create endpoint</h2>
-          <p>Add a target URL to receive forwarded webhook events.</p>
-        </div>
+    <section class="card">
+      <div class="section-heading">
+        <h2>All registered users</h2>
+      </div>
 
-        <form id="endpoint-form" class="endpoint-form">
-          <label for="name">Endpoint name</label>
-          <input id="name" type="text" placeholder="Production API" required />
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
 
-          <label for="target-url">Target URL</label>
-          <input
-            id="target-url"
-            type="url"
-            placeholder="https://example.com/webhook"
-            required
-          />
-
-          <label for="description">Description</label>
-          <textarea
-            id="description"
-            placeholder="Optional notes about this endpoint"
-          ></textarea>
-
-          <button type="submit">Create endpoint</button>
-        </form>
-      </article>
-
-      <article class="card endpoints-card">
-        <div class="section-heading">
-          <h2>Your endpoints</h2>
-          <p>View and manage registered webhook targets.</p>
-        </div>
-
-        <div class="endpoint-browser">
-          <div id="endpoint-list" class="endpoint-list"></div>
-          <div id="endpoint-detail" class="endpoint-detail"></div>
-        </div>
-      </article>
+        <tbody id="admin-user-list"></tbody>
+      </table>
     </section>
 
-    <section class="card activity-card">
-      <div class="section-heading">
-        <h2>Recent activity</h2>
-        <p>Incoming events and delivery attempts.</p>
-      </div>
-
-      <div class="activity-grid">
-        <div>
-          <h3>Events</h3>
-          <div id="event-list" class="resource-list"></div>
+    <section class="admin-bottom">
+      <article class="card">
+        <div class="section-heading">
+          <h2>Endpoints</h2>
+          <p>All registered webhook endpoints.</p>
         </div>
 
-        <div>
-          <h3>Deliveries</h3>
-          <div id="delivery-list" class="resource-list"></div>
+        <div id="admin-endpoint-list" class="resource-list">
+          <p>No endpoints found.</p>
         </div>
-      </div>
+      </article>
+
+      <article class="card">
+        <div class="section-heading">
+          <h2>Recent activity</h2>
+          <p>Latest events and delivery attempts.</p>
+        </div>
+
+        <div class="activity-grid">
+          <div>
+            <h3>Events</h3>
+            <div id="admin-event-list" class="resource-list">
+              <p>No events recorded.</p>
+            </div>
+          </div>
+
+          <div>
+            <h3>Deliveries</h3>
+            <div id="admin-delivery-list" class="resource-list">
+              <p>No deliveries recorded.</p>
+            </div>
+          </div>
+        </div>
+      </article>
     </section>
   </main>
-
   <script src="/app.js"></script>
 </body>
 </html>
