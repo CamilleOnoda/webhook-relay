@@ -2,7 +2,7 @@
 
 A webhook relay service written in Go.
 
-This project allows users to create webhook endpoints, receive incoming webhook events, store them in PostgreSQL, and forward them to configured target URLs while tracking delivery results and request metadata.
+This project allows users to create webhook endpoints, receive incoming webhook events, store them in PostgreSQL, <br>and forward them to configured target URLs while tracking delivery results and request metadata.
 
 The project focuses heavily on backend fundamentals such as:
 
@@ -16,18 +16,41 @@ The project focuses heavily on backend fundamentals such as:
 
 ---
 
+# Motivation
+
+Many modern applications rely on webhooks to communicate between services, yet the mechanics behind webhook delivery are often hidden behind third-party platforms.
+
+I built this project to better understand what happens between the moment a webhook is received and the moment it reaches its destination.
+
+The goal was not only to learn Go, but to gain experience with:
+
+- HTTP request handling
+- API design
+- Database persistence
+- Authentication and authorization
+- Request forwarding
+- Delivery tracking
+- Service architecture
+
+Rather than consuming webhooks through existing tools, I wanted to build the infrastructure myself and explore the challenges involved in receiving, storing, processing, and forwarding webhook events reliably.
+
+This project became an opportunity to combine several backend concepts into a single application while simulating the kind of event-driven systems commonly used in production environments.
+
+---
+
 ## Table of Contents
 
 - [Features](#features)
 - [Webhook Flow](#webhook-flow)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
-- [Setup](#setup)
-- [API Overview](#api-overview)
+- [Quick Start](#quick-start)
+- [Usage](#usage)
 - [Header Filtering](#header-filtering)
 - [What I Learned](#what-i-learned)
 - [Post-MVP Roadmap](#post-mvp-roadmap)
 - [Deployment](#deployment)
+- [Contributing](#contributing)
 - [License](#license)
 
 ## Screenshots
@@ -214,7 +237,7 @@ The frontend supports:
 
 ---
 
-# Setup
+# Quick Start
 ## Prerequisites
 
 - Go
@@ -281,7 +304,7 @@ http://localhost:8080
 
 ---
 
-# API Overview
+# Usage
 
 ## Health check
 
@@ -475,6 +498,66 @@ The deployment process included:
 - Public API routing
 - Frontend/backend integration
 - Git history recovery and safe force-pushing
+
+---
+
+# Contributing
+
+Contributions, suggestions, and bug reports are welcome.
+
+If you would like to contribute:
+
+1. Fork the repository
+2. Create a feature branch
+
+```bash
+git checkout -b feature/my-feature
+```
+
+3. Make your changes
+4. Run tests and verify the application works correctly
+5. Commit your changes
+
+```bash
+git commit -m "feat: add my feature"
+```
+
+6. Push your branch
+
+```bash
+git push origin feature/my-feature
+```
+
+7. Open a Pull Request
+
+## Development Guidelines
+
+- Follow standard Go formatting:
+
+```bash
+go fmt ./...
+```
+- Keep handlers focused on HTTP concerns
+- Keep business logic inside service packages
+- Add migrations for database schema changes
+- Regenerate sqlc code after query updates:
+
+```bash
+sqlc generate
+```
+
+- Include tests when appropriate
+
+## Reporting Issues
+
+If you find a bug or have a feature request, please open an issue describing:
+
+- Expected behavior
+- Actual behavior
+- Steps to reproduce
+- Relevant logs or screenshots
+
+All constructive feedback is appreciated.
 
 ---
 
