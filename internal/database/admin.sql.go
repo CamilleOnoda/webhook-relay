@@ -9,6 +9,15 @@ import (
 	"context"
 )
 
+const deleteAllEndpoints = `-- name: DeleteAllEndpoints :exec
+DELETE FROM webhook_endpoints
+`
+
+func (q *Queries) DeleteAllEndpoints(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, deleteAllEndpoints)
+	return err
+}
+
 const getAdminStats = `-- name: GetAdminStats :one
 SELECT
   (SELECT COUNT(*) FROM users) AS users,
@@ -34,4 +43,38 @@ func (q *Queries) GetAdminStats(ctx context.Context) (GetAdminStatsRow, error) {
 		&i.FailedDeliveries,
 	)
 	return i, err
+}
+
+const getAllEvents = `-- name: GetAllEvents :many
+SELECT id, endpoint_id, event_type, payload, headers, received_at FROM webhook_events
+`
+
+func (q *Queries) GetAllEvents(ctx context.Context) ([]WebhookEvent, error) {
+	rows, err := q.db.QueryContext(ctx, getAllEvents)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []WebhookEvent
+	for rows.Next() {
+		var i WebhookEvent
+		if err := rows.Scan(
+			&i.ID,
+			&i.EndpointID,
+			&i.EventType,
+			&i.Payload,
+			&i.Headers,
+			&i.ReceivedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

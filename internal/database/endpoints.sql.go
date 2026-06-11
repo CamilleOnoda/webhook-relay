@@ -46,15 +46,6 @@ func (q *Queries) CreateEndpoint(ctx context.Context, arg CreateEndpointParams) 
 	return i, err
 }
 
-const deleteAllEndpoints = `-- name: DeleteAllEndpoints :exec
-DELETE FROM webhook_endpoints
-`
-
-func (q *Queries) DeleteAllEndpoints(ctx context.Context) error {
-	_, err := q.db.ExecContext(ctx, deleteAllEndpoints)
-	return err
-}
-
 const deleteEndpointByIDAndUserID = `-- name: DeleteEndpointByIDAndUserID :exec
 DELETE FROM webhook_endpoints
 WHERE id = $1
