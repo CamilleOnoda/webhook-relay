@@ -7,6 +7,10 @@ package database
 
 import (
 	"context"
+	"database/sql"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 const deleteAllEndpoints = `-- name: DeleteAllEndpoints :exec
@@ -45,26 +49,195 @@ func (q *Queries) GetAdminStats(ctx context.Context) (GetAdminStatsRow, error) {
 	return i, err
 }
 
-const getAllEvents = `-- name: GetAllEvents :many
-SELECT id, endpoint_id, event_type, payload, headers, received_at FROM webhook_events
+const getAllEndpoints = `-- name: GetAllEndpoints :many
+SELECT 
+  name, 
+  is_active, 
+  created_at, 
+  user_id 
+FROM webhook_endpoints
+ORDER BY created_at DESC
+LIMIT 10
 `
 
-func (q *Queries) GetAllEvents(ctx context.Context) ([]WebhookEvent, error) {
+type GetAllEndpointsRow struct {
+	Name      string
+	IsActive  bool
+	CreatedAt time.Time
+	UserID    uuid.NullUUID
+}
+
+func (q *Queries) GetAllEndpoints(ctx context.Context) ([]GetAllEndpointsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getAllEndpoints)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllEndpointsRow
+	for rows.Next() {
+		var i GetAllEndpointsRow
+		if err := rows.Scan(
+			&i.Name,
+			&i.IsActive,
+			&i.CreatedAt,
+			&i.UserID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getAllEvents = `-- name: GetAllEvents :many
+SELECT
+  events.id,
+  events.endpoint_id,
+  events.event_type,
+  events.received_at,
+  ep.name AS endpoint_name
+FROM webhook_events events
+JOIN webhook_endpoints ep
+  ON ep.id = events.endpoint_id
+ORDER BY events.received_at DESC
+LIMIT 10
+`
+
+type GetAllEventsRow struct {
+	ID           uuid.UUID
+	EndpointID   uuid.UUID
+	EventType    sql.NullString
+	ReceivedAt   time.Time
+	EndpointName string
+}
+
+func (q *Queries) GetAllEvents(ctx context.Context) ([]GetAllEventsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getAllEvents)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []WebhookEvent
+	var items []GetAllEventsRow
 	for rows.Next() {
-		var i WebhookEvent
+		var i GetAllEventsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.EndpointID,
 			&i.EventType,
-			&i.Payload,
-			&i.Headers,
 			&i.ReceivedAt,
+			&i.EndpointName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getAllUsers = `-- name: GetAllUsers :many
+SELECT 
+  id, 
+  name, 
+  email, 
+  created_at, 
+  updated_at, 
+  is_admin 
+FROM users
+`
+
+type GetAllUsersRow struct {
+	ID        uuid.UUID
+	Name      string
+	Email     string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	IsAdmin   bool
+}
+
+func (q *Queries) GetAllUsers(ctx context.Context) ([]GetAllUsersRow, error) {
+	rows, err := q.db.QueryContext(ctx, getAllUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllUsersRow
+	for rows.Next() {
+		var i GetAllUsersRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Email,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.IsAdmin,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getAlldeliveries = `-- name: GetAlldeliveries :many
+SELECT 
+  d.event_id, 
+  d.status, 
+  d.status_code, 
+  d.target_url, 
+  d.created_at,
+  ep.name AS endpoint_name
+FROM deliveries d
+JOIN webhook_events e
+  ON e.id = d.event_id
+JOIN webhook_endpoints ep
+  ON ep.id = e.endpoint_id
+ORDER BY d.created_at DESC
+LIMIT 10
+`
+
+type GetAlldeliveriesRow struct {
+	EventID      uuid.UUID
+	Status       string
+	StatusCode   sql.NullInt32
+	TargetUrl    string
+	CreatedAt    time.Time
+	EndpointName string
+}
+
+func (q *Queries) GetAlldeliveries(ctx context.Context) ([]GetAlldeliveriesRow, error) {
+	rows, err := q.db.QueryContext(ctx, getAlldeliveries)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAlldeliveriesRow
+	for rows.Next() {
+		var i GetAlldeliveriesRow
+		if err := rows.Scan(
+			&i.EventID,
+			&i.Status,
+			&i.StatusCode,
+			&i.TargetUrl,
+			&i.CreatedAt,
+			&i.EndpointName,
 		); err != nil {
 			return nil, err
 		}
