@@ -568,15 +568,15 @@ async function loadUsers() {
 
       const actions = document.createElement("td");
 
-      const deleteButton = document.createElement("button");
-      deleteButton.textContent = "Delete";
-      deleteButton.className = "delete-button";
-
-      deleteButton.addEventListener("click", async () => {
+      if (!user.is_admin) {
+        const deleteButton = document.createElement("button");
+        deleteButton.textContent = "Delete";
+        deleteButton.className = "delete-button";
+        deleteButton.addEventListener("click", async () => {
         await deleteUser(user.id);
       });
-
       actions.appendChild(deleteButton);
+    }
 
       row.append(
         name,
