@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/CamilleOnoda/webhook-relay.git/internal/database"
 	"github.com/google/uuid"
 )
 
@@ -16,6 +15,7 @@ type Delivery struct {
 	StatusCode         *int32    `json:"status_code"`
 	CreatedAt          time.Time `json:"created_at"`
 	DeliveryDurationMs *int32    `json:"delivery_duration_ms"`
+	UserName           string    `json:"user_name"`
 }
 
 func (cfg *apiConfig) handlerListDeliveriesByUser(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +37,6 @@ func (cfg *apiConfig) handlerListDeliveriesByUser(w http.ResponseWriter, r *http
 		Valid: true,
 	}
 
-	var deliveries []database.ListDeliveriesByUserRow
 	deliveries, err := cfg.db.ListDeliveriesByUser(r.Context(), userID)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError,
