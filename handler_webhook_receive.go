@@ -85,7 +85,7 @@ func (cfg *apiConfig) handlerReceiveWebhook(w http.ResponseWriter, r *http.Reque
 
 	status := "success"
 	if err != nil || attemptResult.ErrorMessage.Valid {
-		status = "failed"
+		status = "retry_scheduled"
 	}
 
 	if err := cfg.db.UpdateDelivery(r.Context(), database.UpdateDeliveryParams{

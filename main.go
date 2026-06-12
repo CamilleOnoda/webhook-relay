@@ -62,25 +62,56 @@ func main() {
 		cfg.authMiddleware(
 			http.HandlerFunc(cfg.handlerCreateEndpoint)))
 
+	mux.Handle("DELETE /api/endpoints/{id}",
+		cfg.authMiddleware(
+			http.HandlerFunc(cfg.handlerDeleteEndpointByID)))
+
 	mux.HandleFunc("POST /webhooks/{id}", cfg.handlerReceiveWebhook)
 
 	mux.HandleFunc("POST /api/users", cfg.handlerUsersCreate)
 
 	mux.HandleFunc("/api/login", cfg.handlerLogin)
 
-	mux.Handle("DELETE /admin/users/delete",
+	mux.Handle("DELETE /admin/users/{id}",
 		cfg.authMiddleware(
 			cfg.adminMiddleware(
-				http.HandlerFunc(cfg.handlerDeleteUsers))))
+				http.HandlerFunc(cfg.handlerDeleteUserByID))))
 
-	mux.Handle("DELETE /admin/endpoints/delete",
+	// To delete
+	mux.Handle("DELETE /admin/endpoints/{id}",
 		cfg.authMiddleware(
 			cfg.adminMiddleware(
 				http.HandlerFunc(cfg.handlerDeleteAllEndpoints))))
 
-	mux.Handle("DELETE /api/endpoints/{id}",
+	mux.Handle("GET /admin/users",
 		cfg.authMiddleware(
-			http.HandlerFunc(cfg.handlerDeleteEndpointByID)))
+			cfg.adminMiddleware(
+				http.HandlerFunc(cfg.handlerGetUsers))))
+
+	mux.Handle("GET /admin/stats",
+		cfg.authMiddleware(
+			cfg.adminMiddleware(
+				http.HandlerFunc(cfg.handlerGetAdminStats))))
+
+	mux.Handle("GET /admin/endpoints",
+		cfg.authMiddleware(
+			cfg.adminMiddleware(
+				http.HandlerFunc(cfg.handlerGetAllEndpoints))))
+
+	mux.Handle("GET /admin/recent-activity",
+		cfg.authMiddleware(
+			cfg.adminMiddleware(
+				http.HandlerFunc(cfg.handlerGetRecentActivity))))
+
+	mux.Handle("GET /admin/events",
+		cfg.authMiddleware(
+			cfg.adminMiddleware(
+				http.HandlerFunc(cfg.handlerGetEvents))))
+
+	mux.Handle("GET /admin/deliveries",
+		cfg.authMiddleware(
+			cfg.adminMiddleware(
+				http.HandlerFunc(cfg.handlerGetDeliveries))))
 
 	fileServer := http.FileServer(http.Dir("./internal/static"))
 	mux.Handle("/", fileServer)

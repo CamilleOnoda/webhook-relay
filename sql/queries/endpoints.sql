@@ -12,9 +12,6 @@ SELECT * FROM webhook_endpoints
 WHERE id = $1
 AND user_id = $2;
 
--- name: DeleteAllEndpoints :exec
-DELETE FROM webhook_endpoints;
-
 -- name: DeleteEndpointByIDAndUserID :exec
 DELETE FROM webhook_endpoints
 WHERE id = $1

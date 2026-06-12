@@ -3,7 +3,6 @@ package main
 import (
 	"net/http"
 
-	"github.com/CamilleOnoda/webhook-relay.git/internal/database"
 	"github.com/google/uuid"
 )
 
@@ -28,7 +27,6 @@ func (cfg *apiConfig) handlerGetEndpoints(w http.ResponseWriter, r *http.Request
 		Valid: true,
 	}
 
-	var endpoints []database.WebhookEndpoint
 	endpoints, err := cfg.db.GetEndpointsByUserID(r.Context(), userID)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError,

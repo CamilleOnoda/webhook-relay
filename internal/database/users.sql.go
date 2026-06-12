@@ -38,14 +38,35 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	return i, err
 }
 
-const deleteUsers = `-- name: DeleteUsers :exec
+const deleteUserByID = `-- name: DeleteUserByID :exec
 DELETE FROM users
 WHERE is_admin = false
+AND id = $1
+RETURNING id
 `
 
-func (q *Queries) DeleteUsers(ctx context.Context) error {
-	_, err := q.db.ExecContext(ctx, deleteUsers)
+func (q *Queries) DeleteUserByID(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteUserByID, id)
 	return err
+}
+
+const getUserByID = `-- name: GetUserByID :one
+SELECT id, name, email, hashed_password, created_at, updated_at, is_admin FROM users WHERE id = $1
+`
+
+func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByID, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.HashedPassword,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.IsAdmin,
+	)
+	return i, err
 }
 
 const isUserAdmin = `-- name: IsUserAdmin :one

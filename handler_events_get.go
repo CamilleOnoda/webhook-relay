@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/CamilleOnoda/webhook-relay.git/internal/database"
 	"github.com/google/uuid"
 )
 
@@ -14,6 +13,7 @@ type Event struct {
 	EventType    *string       `json:"event_type"`
 	ReceivedAt   time.Time     `json:"received_at"`
 	UserID       uuid.NullUUID `json:"user_id"`
+	UserName     string        `json:"user_name"`
 }
 
 // List all webhook events for the authenticated user.
@@ -37,7 +37,6 @@ func (cfg *apiConfig) handlerListEventsByUser(w http.ResponseWriter, r *http.Req
 		Valid: true,
 	}
 
-	var events []database.ListEventsByUserRow
 	events, err := cfg.db.ListEventsByUser(r.Context(), userID)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError,

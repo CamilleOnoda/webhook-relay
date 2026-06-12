@@ -21,6 +21,7 @@ type Endpoint struct {
 	GeneratedURL string        `json:"generated_url"`
 	Description  *string       `json:"description,omitempty"`
 	UserID       uuid.NullUUID `json:"user_id"`
+	UserName     string        `json:"user_name"`
 }
 
 // Create a new webhook endpoint for the authenticated user.
