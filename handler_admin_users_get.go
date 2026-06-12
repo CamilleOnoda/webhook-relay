@@ -2,8 +2,6 @@ package main
 
 import (
 	"net/http"
-
-	"github.com/CamilleOnoda/webhook-relay.git/internal/database"
 )
 
 func (cfg *apiConfig) handlerGetUsers(w http.ResponseWriter, r *http.Request) {
@@ -13,7 +11,7 @@ func (cfg *apiConfig) handlerGetUsers(w http.ResponseWriter, r *http.Request) {
 			"Method not allowed", nil)
 		return
 	}
-	var users []database.GetAllUsersRow
+
 	users, err := cfg.db.GetAllUsers(r.Context())
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError,

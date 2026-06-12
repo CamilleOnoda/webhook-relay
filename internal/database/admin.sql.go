@@ -27,14 +27,16 @@ SELECT
   (SELECT COUNT(*) FROM users) AS users,
   (SELECT COUNT(*) FROM webhook_events) AS events_received,
   (SELECT COUNT(*) FROM deliveries WHERE status = 'success') AS successful_deliveries,
-  (SELECT COUNT(*) FROM deliveries WHERE status = 'failed') AS failed_deliveries
+  (SELECT COUNT(*) FROM deliveries WHERE status = 'failed') AS failed_deliveries,
+  (SELECT COUNT(*) FROM deliveries WHERE status = 'retry_scheduled') AS retry_scheduled_deliveries
 `
 
 type GetAdminStatsRow struct {
-	Users                int64
-	EventsReceived       int64
-	SuccessfulDeliveries int64
-	FailedDeliveries     int64
+	Users                    int64
+	EventsReceived           int64
+	SuccessfulDeliveries     int64
+	FailedDeliveries         int64
+	RetryScheduledDeliveries int64
 }
 
 func (q *Queries) GetAdminStats(ctx context.Context) (GetAdminStatsRow, error) {
@@ -45,18 +47,77 @@ func (q *Queries) GetAdminStats(ctx context.Context) (GetAdminStatsRow, error) {
 		&i.EventsReceived,
 		&i.SuccessfulDeliveries,
 		&i.FailedDeliveries,
+		&i.RetryScheduledDeliveries,
 	)
 	return i, err
 }
 
+const getAllDeliveries = `-- name: GetAllDeliveries :many
+SELECT
+  d.created_at,
+  d.status,
+  d.status_code,
+  ep.name AS endpoint_name,
+  u.name AS user_name
+FROM deliveries d
+JOIN webhook_events e
+  ON e.id = d.event_id
+JOIN webhook_endpoints ep
+  ON ep.id = e.endpoint_id
+JOIN users u
+  ON u.id = ep.user_id
+ORDER BY d.created_at DESC
+LIMIT 10
+`
+
+type GetAllDeliveriesRow struct {
+	CreatedAt    time.Time
+	Status       string
+	StatusCode   sql.NullInt32
+	EndpointName string
+	UserName     string
+}
+
+func (q *Queries) GetAllDeliveries(ctx context.Context) ([]GetAllDeliveriesRow, error) {
+	rows, err := q.db.QueryContext(ctx, getAllDeliveries)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllDeliveriesRow
+	for rows.Next() {
+		var i GetAllDeliveriesRow
+		if err := rows.Scan(
+			&i.CreatedAt,
+			&i.Status,
+			&i.StatusCode,
+			&i.EndpointName,
+			&i.UserName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAllEndpoints = `-- name: GetAllEndpoints :many
 SELECT 
-  name, 
-  is_active, 
-  created_at, 
-  user_id 
-FROM webhook_endpoints
-ORDER BY created_at DESC
+  ep.name, 
+  ep.is_active, 
+  ep.created_at, 
+  ep.user_id,
+  u.name as user_name
+FROM webhook_endpoints ep
+JOIN users u
+  ON u.id = ep.user_id
+ORDER BY ep.created_at DESC
 LIMIT 10
 `
 
@@ -65,6 +126,7 @@ type GetAllEndpointsRow struct {
 	IsActive  bool
 	CreatedAt time.Time
 	UserID    uuid.NullUUID
+	UserName  string
 }
 
 func (q *Queries) GetAllEndpoints(ctx context.Context) ([]GetAllEndpointsRow, error) {
@@ -81,6 +143,7 @@ func (q *Queries) GetAllEndpoints(ctx context.Context) ([]GetAllEndpointsRow, er
 			&i.IsActive,
 			&i.CreatedAt,
 			&i.UserID,
+			&i.UserName,
 		); err != nil {
 			return nil, err
 		}
@@ -97,24 +160,24 @@ func (q *Queries) GetAllEndpoints(ctx context.Context) ([]GetAllEndpointsRow, er
 
 const getAllEvents = `-- name: GetAllEvents :many
 SELECT
-  events.id,
-  events.endpoint_id,
-  events.event_type,
-  events.received_at,
-  ep.name AS endpoint_name
-FROM webhook_events events
+  e.received_at,
+  e.event_type,
+  ep.name AS endpoint_name,
+  u.name AS user_name
+FROM webhook_events e
 JOIN webhook_endpoints ep
-  ON ep.id = events.endpoint_id
-ORDER BY events.received_at DESC
+  ON ep.id = e.endpoint_id
+JOIN users u
+  ON u.id = ep.user_id
+ORDER BY e.received_at DESC
 LIMIT 10
 `
 
 type GetAllEventsRow struct {
-	ID           uuid.UUID
-	EndpointID   uuid.UUID
-	EventType    sql.NullString
 	ReceivedAt   time.Time
+	EventType    sql.NullString
 	EndpointName string
+	UserName     string
 }
 
 func (q *Queries) GetAllEvents(ctx context.Context) ([]GetAllEventsRow, error) {
@@ -127,11 +190,10 @@ func (q *Queries) GetAllEvents(ctx context.Context) ([]GetAllEventsRow, error) {
 	for rows.Next() {
 		var i GetAllEventsRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.EndpointID,
-			&i.EventType,
 			&i.ReceivedAt,
+			&i.EventType,
 			&i.EndpointName,
+			&i.UserName,
 		); err != nil {
 			return nil, err
 		}
@@ -196,48 +258,61 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]GetAllUsersRow, error) {
 	return items, nil
 }
 
-const getAlldeliveries = `-- name: GetAlldeliveries :many
-SELECT 
-  d.event_id, 
-  d.status, 
-  d.status_code, 
-  d.target_url, 
-  d.created_at,
-  ep.name AS endpoint_name
-FROM deliveries d
-JOIN webhook_events e
-  ON e.id = d.event_id
+const getRecentActivity = `-- name: GetRecentActivity :many
+SELECT
+  e.id AS event_id,
+  e.received_at,
+  ep.name AS endpoint_name,
+  u.name AS user_name,
+  e.event_type,
+  COALESCE(d.status, 'pending') AS latest_delivery_status,
+  d.status_code AS latest_delivery_status_code
+FROM webhook_events e
 JOIN webhook_endpoints ep
   ON ep.id = e.endpoint_id
-ORDER BY d.created_at DESC
+JOIN users u
+  ON u.id = ep.user_id
+LEFT JOIN LATERAL (
+  SELECT
+    status,
+    status_code,
+    created_at
+  FROM deliveries
+  WHERE deliveries.event_id = e.id
+  ORDER BY created_at DESC
+  LIMIT 1
+) d ON true
+ORDER BY e.received_at DESC
 LIMIT 10
 `
 
-type GetAlldeliveriesRow struct {
-	EventID      uuid.UUID
-	Status       string
-	StatusCode   sql.NullInt32
-	TargetUrl    string
-	CreatedAt    time.Time
-	EndpointName string
+type GetRecentActivityRow struct {
+	EventID                  uuid.UUID
+	ReceivedAt               time.Time
+	EndpointName             string
+	UserName                 string
+	EventType                sql.NullString
+	LatestDeliveryStatus     string
+	LatestDeliveryStatusCode sql.NullInt32
 }
 
-func (q *Queries) GetAlldeliveries(ctx context.Context) ([]GetAlldeliveriesRow, error) {
-	rows, err := q.db.QueryContext(ctx, getAlldeliveries)
+func (q *Queries) GetRecentActivity(ctx context.Context) ([]GetRecentActivityRow, error) {
+	rows, err := q.db.QueryContext(ctx, getRecentActivity)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetAlldeliveriesRow
+	var items []GetRecentActivityRow
 	for rows.Next() {
-		var i GetAlldeliveriesRow
+		var i GetRecentActivityRow
 		if err := rows.Scan(
 			&i.EventID,
-			&i.Status,
-			&i.StatusCode,
-			&i.TargetUrl,
-			&i.CreatedAt,
+			&i.ReceivedAt,
 			&i.EndpointName,
+			&i.UserName,
+			&i.EventType,
+			&i.LatestDeliveryStatus,
+			&i.LatestDeliveryStatusCode,
 		); err != nil {
 			return nil, err
 		}

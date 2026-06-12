@@ -10,7 +10,7 @@ func (cfg *apiConfig) handlerGetDeliveries(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	deliveries, err := cfg.db.GetAlldeliveries(r.Context())
+	deliveries, err := cfg.db.GetAllDeliveries(r.Context())
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError,
 			"failed to list endpoints", err)
@@ -24,11 +24,11 @@ func (cfg *apiConfig) handlerGetDeliveries(w http.ResponseWriter, r *http.Reques
 			statusCode = &delivery.StatusCode.Int32
 		}
 		responseDeliveries = append(responseDeliveries, Delivery{
-			EndpointName: delivery.EndpointName,
+			CreatedAt:    delivery.CreatedAt,
 			Status:       delivery.Status,
 			StatusCode:   statusCode,
-			TargetUrl:    delivery.TargetUrl,
-			CreatedAt:    delivery.CreatedAt,
+			EndpointName: delivery.EndpointName,
+			UserName:     delivery.UserName,
 		})
 	}
 	respondWithJSON(w, http.StatusOK, responseDeliveries)

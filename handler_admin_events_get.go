@@ -29,6 +29,7 @@ func (cfg *apiConfig) handlerGetEvents(w http.ResponseWriter, r *http.Request) {
 			EndpointName: event.EndpointName,
 			EventType:    eventType,
 			ReceivedAt:   event.ReceivedAt,
+			UserName:     event.UserName,
 		})
 	}
 

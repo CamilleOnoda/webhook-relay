@@ -25,6 +25,7 @@ func (cfg *apiConfig) handlerGetAllEndpoints(w http.ResponseWriter, r *http.Requ
 			IsActive:  endpoint.IsActive,
 			CreatedAt: endpoint.CreatedAt,
 			UserID:    endpoint.UserID,
+			UserName:  endpoint.UserName,
 		})
 	}
 	respondWithJSON(w, http.StatusOK, responseEndpoints)
