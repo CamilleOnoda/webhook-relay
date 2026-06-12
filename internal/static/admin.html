@@ -35,19 +35,66 @@
         <span class="stat-label">Successful Deliveries</span>
         <strong id="successful-delivery-count">0</strong>
       </article>
-        <article class="stat-card">
+      <article class="stat-card">
+        <span class="stat-label">Retry Scheduled Deliveries</span>
+        <strong id="retry-scheduled-count">0</strong>
+      </article>
+      <article class="stat-card">
         <span class="stat-label">Failed Deliveries</span>
         <strong id="failed-delivery-count">0</strong>
-        </article>
+      </article>
     </section>
 
     <p id="message" class="message"></p>
 
-    <section class="card">
-      <div class="section-heading">
-        <h2>All registered users</h2>
-      </div>
+      <article class="card">
+        <div class="section-heading">
+          <h2>Recent activity</h2>
+          <p>Latest events and delivery attempts.</p>
+        </div>
 
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Endpoint</th>
+              <th>User</th>
+              <th>Event Type</th>
+              <th>Latest Status</th>
+              <th>Code</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+
+          <tbody id="admin-recent-activity-list">
+            <tr>
+              <td colspan="7">No events/deliveries recorded.</td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+    <section class="admin-bottom">
+      <article class="card">
+        <div class="section-heading">
+          <h2>Endpoints</h2>
+          <p>Registered webhook endpoints.</p>
+        </div>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>User</th>
+            <th>Status</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody id="admin-endpoint-list"></tbody>
+      </table>
+      </article>
+          <section class="card">
+      <div class="section-heading">
+        <h2>Registered users</h2>
+      </div>
       <table class="admin-table">
         <thead>
           <tr>
@@ -58,45 +105,9 @@
             <th>Actions</th>
           </tr>
         </thead>
-
         <tbody id="admin-user-list"></tbody>
       </table>
     </section>
-
-    <section class="admin-bottom">
-      <article class="card">
-        <div class="section-heading">
-          <h2>Endpoints</h2>
-          <p>All registered webhook endpoints.</p>
-        </div>
-
-        <div id="admin-endpoint-list" class="resource-list">
-          <p>No endpoints found.</p>
-        </div>
-      </article>
-
-      <article class="card">
-        <div class="section-heading">
-          <h2>Recent activity</h2>
-          <p>Latest events and delivery attempts.</p>
-        </div>
-
-        <div class="activity-grid">
-          <div>
-            <h3>Events</h3>
-            <div id="admin-event-list" class="resource-list">
-              <p>No events recorded.</p>
-            </div>
-          </div>
-
-          <div>
-            <h3>Deliveries</h3>
-            <div id="admin-delivery-list" class="resource-list">
-              <p>No deliveries recorded.</p>
-            </div>
-          </div>
-        </div>
-      </article>
     </section>
   </main>
   <script src="/app.js"></script>
