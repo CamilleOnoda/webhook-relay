@@ -3,7 +3,8 @@ SELECT
   (SELECT COUNT(*) FROM users) AS users,
   (SELECT COUNT(*) FROM webhook_events) AS events_received,
   (SELECT COUNT(*) FROM deliveries WHERE status = 'success') AS successful_deliveries,
-  (SELECT COUNT(*) FROM deliveries WHERE status = 'failed') AS failed_deliveries;
+  (SELECT COUNT(*) FROM deliveries WHERE status = 'failed') AS failed_deliveries,
+  (SELECT COUNT(*) FROM deliveries WHERE status = 'retry_scheduled') AS retry_scheduled_deliveries;
 
 -- name: GetAllUsers :many
 SELECT 
@@ -15,42 +16,74 @@ SELECT
   is_admin 
 FROM users;
 
+-- name: GetRecentActivity :many
+SELECT
+  e.id AS event_id,
+  e.received_at,
+  ep.name AS endpoint_name,
+  u.name AS user_name,
+  e.event_type,
+  COALESCE(d.status, 'pending') AS latest_delivery_status,
+  d.status_code AS latest_delivery_status_code
+FROM webhook_events e
+JOIN webhook_endpoints ep
+  ON ep.id = e.endpoint_id
+JOIN users u
+  ON u.id = ep.user_id
+LEFT JOIN LATERAL (
+  SELECT
+    status,
+    status_code,
+    created_at
+  FROM deliveries
+  WHERE deliveries.event_id = e.id
+  ORDER BY created_at DESC
+  LIMIT 1
+) d ON true
+ORDER BY e.received_at DESC
+LIMIT 10;
+
 -- name: GetAllEvents :many
 SELECT
-  events.id,
-  events.endpoint_id,
-  events.event_type,
-  events.received_at,
-  ep.name AS endpoint_name
-FROM webhook_events events
+  e.received_at,
+  e.event_type,
+  ep.name AS endpoint_name,
+  u.name AS user_name
+FROM webhook_events e
 JOIN webhook_endpoints ep
-  ON ep.id = events.endpoint_id
-ORDER BY events.received_at DESC
+  ON ep.id = e.endpoint_id
+JOIN users u
+  ON u.id = ep.user_id
+ORDER BY e.received_at DESC
 LIMIT 10;
 
 -- name: GetAllEndpoints :many
 SELECT 
-  name, 
-  is_active, 
-  created_at, 
-  user_id 
-FROM webhook_endpoints
-ORDER BY created_at DESC
+  ep.name, 
+  ep.is_active, 
+  ep.created_at, 
+  ep.user_id,
+  u.name as user_name
+FROM webhook_endpoints ep
+JOIN users u
+  ON u.id = ep.user_id
+ORDER BY ep.created_at DESC
 LIMIT 10;
 
--- name: GetAlldeliveries :many
-SELECT 
-  d.event_id, 
-  d.status, 
-  d.status_code, 
-  d.target_url, 
+-- name: GetAllDeliveries :many
+SELECT
   d.created_at,
-  ep.name AS endpoint_name
+  d.status,
+  d.status_code,
+  ep.name AS endpoint_name,
+  u.name AS user_name
 FROM deliveries d
 JOIN webhook_events e
   ON e.id = d.event_id
 JOIN webhook_endpoints ep
   ON ep.id = e.endpoint_id
+JOIN users u
+  ON u.id = ep.user_id
 ORDER BY d.created_at DESC
 LIMIT 10;
 
