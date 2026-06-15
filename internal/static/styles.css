@@ -471,3 +471,28 @@ button:hover {
 .admin-table tbody tr:hover {
   background: #f8fafc;
 }
+
+@media (max-width: 768px) {
+  body {
+    padding: 1rem;
+  }
+
+  .dashboard {
+    width: 100%;
+    max-width: none;
+  }
+
+  .admin-grid,
+  .stats-grid,
+  .forms-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    overflow-x: auto;
+  }
+
+  table {
+    min-width: 700px;
+  }
+}
