@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/CamilleOnoda/webhook-relay.git/internal/auth"
 	"github.com/CamilleOnoda/webhook-relay.git/internal/database"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -15,7 +16,7 @@ type apiConfig struct {
 	db          *database.Queries
 	environment string
 	baseURL     string
-	jwt_secret  string
+	authConfig  *auth.Config
 }
 
 func main() {
@@ -25,89 +26,70 @@ func main() {
 		port = "8080"
 	}
 	dbURL := os.Getenv("DB_URL")
-
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	defer db.Close()
 
+	authConfig, err := auth.NewConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
 	cfg := &apiConfig{
 		db:          database.New(db),
 		environment: os.Getenv("ENV"),
 		baseURL:     os.Getenv("BASE_URL"),
-		jwt_secret:  os.Getenv("JWT_SECRET"),
+		authConfig:  authConfig,
 	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /admin/health", handlerReadiness)
-
 	mux.Handle("GET /api/endpoints",
 		cfg.authMiddleware(
 			http.HandlerFunc(cfg.handlerGetEndpoints)))
-
 	mux.Handle("GET /api/endpoints/{id}",
 		cfg.authMiddleware(
 			http.HandlerFunc(cfg.handlerGetEndpointByID)))
-
 	mux.Handle("GET /api/events",
 		cfg.authMiddleware(
 			http.HandlerFunc(cfg.handlerListEventsByUser)))
-
 	mux.Handle("GET /api/deliveries",
 		cfg.authMiddleware(
 			http.HandlerFunc(cfg.handlerListDeliveriesByUser)))
-
 	mux.Handle("/api/endpoints",
 		cfg.authMiddleware(
 			http.HandlerFunc(cfg.handlerCreateEndpoint)))
-
 	mux.Handle("DELETE /api/endpoints/{id}",
 		cfg.authMiddleware(
 			http.HandlerFunc(cfg.handlerDeleteEndpointByID)))
-
 	mux.HandleFunc("POST /webhooks/{id}", cfg.handlerReceiveWebhook)
-
 	mux.HandleFunc("POST /api/users", cfg.handlerUsersCreate)
-
 	mux.HandleFunc("/api/login", cfg.handlerLogin)
-
 	mux.Handle("DELETE /admin/users/{id}",
 		cfg.authMiddleware(
 			cfg.adminMiddleware(
 				http.HandlerFunc(cfg.handlerDeleteUserByID))))
-
-	// To delete
-	mux.Handle("DELETE /admin/endpoints/{id}",
-		cfg.authMiddleware(
-			cfg.adminMiddleware(
-				http.HandlerFunc(cfg.handlerDeleteAllEndpoints))))
-
 	mux.Handle("GET /admin/users",
 		cfg.authMiddleware(
 			cfg.adminMiddleware(
 				http.HandlerFunc(cfg.handlerGetUsers))))
-
 	mux.Handle("GET /admin/stats",
 		cfg.authMiddleware(
 			cfg.adminMiddleware(
 				http.HandlerFunc(cfg.handlerGetAdminStats))))
-
 	mux.Handle("GET /admin/endpoints",
 		cfg.authMiddleware(
 			cfg.adminMiddleware(
 				http.HandlerFunc(cfg.handlerGetAllEndpoints))))
-
 	mux.Handle("GET /admin/recent-activity",
 		cfg.authMiddleware(
 			cfg.adminMiddleware(
 				http.HandlerFunc(cfg.handlerGetRecentActivity))))
-
 	mux.Handle("GET /admin/events",
 		cfg.authMiddleware(
 			cfg.adminMiddleware(
 				http.HandlerFunc(cfg.handlerGetEvents))))
-
 	mux.Handle("GET /admin/deliveries",
 		cfg.authMiddleware(
 			cfg.adminMiddleware(

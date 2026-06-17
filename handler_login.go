@@ -34,7 +34,11 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := auth.MakeJWT(dbUser.ID, cfg.jwt_secret, time.Hour)
+	acessToken, err := auth.MakeJWT(
+		dbUser.ID,
+		string(cfg.authConfig.AccessTokenSecret),
+		24*time.Hour,
+	)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError,
 			"Failed to create token", err)
@@ -42,13 +46,13 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responseUser := User{
-		ID:        dbUser.ID,
-		Name:      dbUser.Name,
-		Email:     dbUser.Email,
-		CreatedAt: dbUser.CreatedAt,
-		UpdatedAt: dbUser.UpdatedAt,
-		Token:     token,
-		IsAdmin:   dbUser.IsAdmin,
+		ID:          dbUser.ID,
+		Name:        dbUser.Name,
+		Email:       dbUser.Email,
+		CreatedAt:   dbUser.CreatedAt,
+		UpdatedAt:   dbUser.UpdatedAt,
+		AccessToken: acessToken,
+		IsAdmin:     dbUser.IsAdmin,
 	}
 
 	respondWithJSON(w, http.StatusOK, responseUser)

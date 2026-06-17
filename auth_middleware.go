@@ -15,7 +15,7 @@ func (cfg *apiConfig) authMiddleware(next http.Handler) http.Handler {
 				"failed to get token", err)
 			return
 		}
-		userID, err := auth.ValidateJWT(token, cfg.jwt_secret)
+		userID, err := auth.ValidateJWT(token, string(cfg.authConfig.AccessTokenSecret))
 		if err != nil {
 			respondWithError(w, http.StatusUnauthorized,
 				"failed to validate token", err)
