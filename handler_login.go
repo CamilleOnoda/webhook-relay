@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/CamilleOnoda/webhook-relay.git/internal/auth"
+	"github.com/CamilleOnoda/webhook-relay.git/internal/database"
 )
 
 func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
@@ -34,10 +35,10 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	acessToken, err := auth.MakeJWT(
+	accessToken, err := auth.MakeJWT(
 		dbUser.ID,
 		string(cfg.authConfig.AccessTokenSecret),
-		24*time.Hour,
+		cfg.authConfig.AccessTokenTTL,
 	)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError,
@@ -45,13 +46,44 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	rawToken, err := auth.MakeRefreshToken()
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError,
+			"Failed to make refresh token", err)
+		return
+	}
+	hashedToken := auth.HashRefreshToken(rawToken)
+	expiresAt := time.Now().UTC().Add(cfg.authConfig.RefreshTokenTTL)
+	_, err = cfg.db.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
+		Token:     hashedToken,
+		UserID:    dbUser.ID,
+		ExpiresAt: expiresAt,
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError,
+			"Failed to store refresh token", err)
+		return
+	}
+
+	cookie := &http.Cookie{
+		Name:     cfg.authConfig.RefreshCookieName,
+		Value:    rawToken,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   cfg.authConfig.CookieSecure,
+		SameSite: cfg.authConfig.CookieSameSite,
+		Expires:  expiresAt,
+	}
+
+	http.SetCookie(w, cookie)
+
 	responseUser := User{
 		ID:          dbUser.ID,
 		Name:        dbUser.Name,
 		Email:       dbUser.Email,
 		CreatedAt:   dbUser.CreatedAt,
 		UpdatedAt:   dbUser.UpdatedAt,
-		AccessToken: acessToken,
+		AccessToken: accessToken,
 		IsAdmin:     dbUser.IsAdmin,
 	}
 
