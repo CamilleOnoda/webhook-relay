@@ -1,15 +1,15 @@
 const message = document.getElementById("message");
 
-function getToken() {
-  return localStorage.getItem("token");
+function getAccessToken() {
+  return localStorage.getItem("access_token");
 }
 
-function setToken(token) {
-  localStorage.setItem("token", token);
+function setAccessToken(access_token) {
+  localStorage.setItem("access_token", access_token);
 }
 
-function removeToken() {
-  localStorage.removeItem("token");
+function removeAccessToken() {
+  localStorage.removeItem("access_token");
 }
 
 function redirectToDashboard() {
@@ -25,13 +25,37 @@ function redirectToLogin() {
 }
 
 async function authFetch(url, options = {}) {
-  const token = getToken();
+  let response = await fetchWithAccessToken(url, options);
+  if (response.status !== 401) {
+    return response;
+  }
 
+  const refreshResponse = await fetch("/api/refresh", {
+    method: "POST",
+    credentials: "include",
+  });
+
+  if (!refreshResponse.ok) {
+    removeAccessToken();
+    redirectToLogin();
+    return refreshResponse;
+  }
+
+  const data = await refreshResponse.json();
+  setAccessToken(data.access_token);
+
+  response = await fetchWithAccessToken(url, options);
+  return response;
+}
+
+async function fetchWithAccessToken(url, options = {}) {
+  const access_token = getAccessToken();
   return fetch(url, {
     ...options,
+    credentials: "include",
     headers: {
       ...(options.headers || {}),
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${access_token}`,
     },
   });
 }
@@ -65,7 +89,7 @@ if (loginForm) {
       }
 
       const data = await response.json();
-      setToken(data.token);
+      setAccessToken(data.access_token);
       
       if (data.is_admin) {
         redirectToAdminDashboard();
@@ -128,7 +152,7 @@ const failedDeliveryCount = document.getElementById("failed-delivery-count");
 const retryScheduledDeliveryCount = document.getElementById("retry-scheduled-count")
 
 if (endpointList) {
-  if (!getToken()) {
+  if (!getAccessToken()) {
     redirectToLogin();
   }
 
@@ -139,7 +163,7 @@ if (endpointList) {
 
 if (logoutButton) {
   logoutButton.addEventListener("click", () => {
-    removeToken();
+    removeAccessToken();
     redirectToLogin();
   });
 }
@@ -406,7 +430,7 @@ async function sendTestWebhook(endpointID, endpointName, div) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Event-Type": "dashboard.test",
+        "X-Event-Type": "payment.success",
       },
       body: JSON.stringify({
         message: "Hello from my dashboard",
@@ -436,9 +460,18 @@ async function sendTestWebhook(endpointID, endpointName, div) {
   }
 }
 
-async function loadEvents() {
-  eventList.innerHTML = "Loading...";
+function createInfoRow(label, value) {
+  const row = document.createElement("p");
 
+  const strong = document.createElement("strong");
+  strong.textContent = `${label}: `;
+
+  row.append(strong, document.createTextNode(value));
+
+  return row;
+}
+
+async function loadEvents() {
   try {
     const response = await authFetch("/api/events");
 
@@ -448,33 +481,36 @@ async function loadEvents() {
 
     const events = await response.json();
     eventCount.textContent = events.length;
-    eventList.innerHTML = "";
+    eventList.textContent = "";
 
     if (events.length === 0) {
-      eventList.innerHTML = "No events yet.";
+      eventList.textContent = "No events yet.";
       return;
     }
 
     for (const event of events) {
-      const div = document.createElement("div");
-      div.className = "endpoint";
+      const card = document.createElement("div");
+      card.className = "endpoint";
 
-      div.innerHTML = `
-        <p><strong>Endpoint name:</strong> ${event.endpoint_name}</p>
-        <p><strong>Event type:</strong> ${event.event_type}</p>
-        <p><strong>Received:</strong> ${event.received_at}</p>
-      `;
+      const title = document.createElement("h4");
+      title.textContent = event.endpoint_name;
 
-      eventList.appendChild(div);
+      card.append(
+        title,
+        createInfoRow("Event Type", event.event_type),
+        createInfoRow("Received", new Date(event.received_at).toLocaleString()),
+      );
+
+      eventList.appendChild(card);
     }
   } catch (error) {
-    eventList.innerHTML = "Failed to load events.";
+    eventList.textContent = "Failed to load events.";
     message.textContent = error.message;
   }
 }
 
 async function loadDeliveries() {
-  deliveryList.innerHTML = "Loading...";
+  deliveryList.textContent = "Loading...";
 
   try {
     const response = await authFetch("/api/deliveries");
@@ -485,30 +521,33 @@ async function loadDeliveries() {
 
     const deliveries = await response.json();
     deliveryCount.textContent = deliveries.length;
-    deliveryList.innerHTML = "";
+    deliveryList.textContent = "";
 
     if (deliveries.length === 0) {
-      deliveryList.innerHTML = "No deliveries yet.";
+      deliveryList.textContent = "No deliveries yet.";
       return;
     }
 
     for (const delivery of deliveries) {
-      const div = document.createElement("div");
-      div.className = "endpoint";
+      const card = document.createElement("div");
+      card.className = "endpoint";
 
-      div.innerHTML = `
-        <p><strong>Endpoint name:</strong> ${delivery.endpoint_name}</p>
-        <p><strong>Status:</strong> ${delivery.status}</p>
-        <p><strong>Status code:</strong> ${delivery.status_code ?? "---"}</p>
-        <p><strong>Target:</strong> ${delivery.target_url}</p>
-        <p><strong>Duration:</strong> ${delivery.delivery_duration_ms ?? "---"} ms</p>
-        <p><strong>Created:</strong> ${delivery.created_at}</p>
-      `;
+      const title = document.createElement("h4");
+      title.textContent = delivery.endpoint_name;
 
-      deliveryList.appendChild(div);
+      card.append(
+        title,
+        createInfoRow("Status", delivery.status),
+        createInfoRow("Status Code", String(delivery.status_code ?? "---")),
+        createInfoRow("Target", delivery.target_url),
+        createInfoRow("Duration", `${delivery.delivery_duration_ms ?? "---"} ms`),
+        createInfoRow("Created", new Date(delivery.created_at).toLocaleString()),
+      );
+
+      deliveryList.appendChild(card);
     }
   } catch (error) {
-    deliveryList.innerHTML = "Failed to load deliveries.";
+    deliveryList.textContent = "Failed to load deliveries.";
     message.textContent = error.message;
   }
 }
