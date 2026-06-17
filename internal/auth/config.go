@@ -1,13 +1,10 @@
 package auth
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"os"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type Config struct {
@@ -18,20 +15,6 @@ type Config struct {
 	RefreshCookieName string
 	CookieSecure      bool
 	CookieSameSite    http.SameSite
-}
-
-type TokenStore interface {
-	StoreRefreshToken(ctx context.Context, tokenHash string, userID uuid.UUID, expiresAt time.Time) error
-	GetRefreshToken(ctx context.Context, tokenHash string) (*RefreshTokenData, error)
-	RevokeRefreshToken(ctx context.Context, tokenHash string) error
-}
-
-type RefreshTokenData struct {
-	TokenID   string
-	UserID    uuid.UUID
-	ExpiresAt time.Time
-	Revoked   bool
-	CreatedAt time.Time
 }
 
 func NewConfig() (*Config, error) {
