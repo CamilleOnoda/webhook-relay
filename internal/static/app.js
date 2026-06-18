@@ -162,9 +162,19 @@ if (endpointList) {
 }
 
 if (logoutButton) {
-  logoutButton.addEventListener("click", () => {
-    removeAccessToken();
-    redirectToLogin();
+  logoutButton.addEventListener("click", async () => {
+    console.log("log out clicked")
+    try {
+      await fetch("/api/revoke", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      removeAccessToken();
+      redirectToLogin();
+    }
   });
 }
 
