@@ -8,11 +8,11 @@ import (
 )
 
 func (cfg *apiConfig) handlerRevoke(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("refresh_token")
+	cookie, err := r.Cookie(cfg.authConfig.RefreshCookieName)
 	if err != nil {
 		switch {
 		case errors.Is(err, http.ErrNoCookie):
-			respondWithError(w, http.StatusBadRequest, "cookie not found", err)
+			w.WriteHeader(http.StatusNoContent)
 		default:
 			respondWithError(w, http.StatusInternalServerError, "server error", err)
 		}
@@ -22,8 +22,22 @@ func (cfg *apiConfig) handlerRevoke(w http.ResponseWriter, r *http.Request) {
 	refreshToken := auth.HashRefreshToken(cookie.Value)
 	_, err = cfg.db.RevokeRefreshToken(r.Context(), refreshToken)
 	if err != nil {
-		http.Error(w, "error revoking token", http.StatusUnauthorized)
+		respondWithError(w, http.StatusInternalServerError, "server error", err)
 		return
 	}
+
+	cfg.clearRefreshCookie(w)
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (cfg *apiConfig) clearRefreshCookie(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     cfg.authConfig.RefreshCookieName,
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   cfg.authConfig.CookieSecure,
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   -1,
+	})
 }
