@@ -11,7 +11,7 @@ func (cfg *apiConfig) handlerRefreshToken(w http.ResponseWriter, r *http.Request
 	w.Header().Set("Content-Type", "application/json")
 
 	type response struct {
-		Token string `json:"token"`
+		AccessToken string `json:"access_token"`
 	}
 
 	cookie, err := r.Cookie("refresh_token")
@@ -41,7 +41,7 @@ func (cfg *apiConfig) handlerRefreshToken(w http.ResponseWriter, r *http.Request
 		return
 	}
 	tokenResponse := response{
-		Token: newAccess,
+		AccessToken: newAccess,
 	}
 	respondWithJSON(w, http.StatusOK, tokenResponse)
 }
