@@ -45,48 +45,39 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /admin/health", handlerReadiness)
-	mux.Handle("GET /api/endpoints", cfg.authMiddleware(
-		http.HandlerFunc(cfg.handlerGetEndpoints)))
-	mux.Handle("GET /api/endpoints/{id}", cfg.authMiddleware(
-		http.HandlerFunc(cfg.handlerGetEndpointByID)))
-	mux.Handle("GET /api/events", cfg.authMiddleware(
-		http.HandlerFunc(cfg.handlerListEventsByUser)))
-	mux.Handle("GET /api/deliveries", cfg.authMiddleware(
-		http.HandlerFunc(cfg.handlerListDeliveriesByUser)))
-	mux.Handle("/api/endpoints", cfg.authMiddleware(
-		http.HandlerFunc(cfg.handlerCreateEndpoint)))
-	mux.Handle("DELETE /api/endpoints/{id}", cfg.authMiddleware(
-		http.HandlerFunc(cfg.handlerDeleteEndpointByID)))
+	mux.Handle("GET /api/endpoints", cfg.authMiddleware(http.HandlerFunc(
+		cfg.handlerGetEndpoints)))
+	mux.Handle("GET /api/endpoints/{id}", cfg.authMiddleware(http.HandlerFunc(
+		cfg.handlerGetEndpointByID)))
+	mux.Handle("GET /api/events", cfg.authMiddleware(http.HandlerFunc(
+		cfg.handlerListEventsByUser)))
+	mux.Handle("GET /api/deliveries", cfg.authMiddleware(http.HandlerFunc(
+		cfg.handlerListDeliveriesByUser)))
+	mux.Handle("/api/endpoints", cfg.authMiddleware(http.HandlerFunc(
+		cfg.handlerCreateEndpoint)))
+	mux.Handle("DELETE /api/endpoints/{id}", cfg.authMiddleware(http.HandlerFunc(
+		cfg.handlerDeleteEndpointByID)))
 	mux.HandleFunc("POST /webhooks/{id}", cfg.handlerReceiveWebhook)
 	mux.HandleFunc("POST /api/users", cfg.handlerUsersCreate)
-	mux.HandleFunc("/api/login", cfg.handlerLogin)
-	mux.Handle("GET /api/refresh", cfg.authMiddleware(
-		http.HandlerFunc(cfg.handlerRefreshToken)))
-	mux.Handle("GET /api/revoke", cfg.authMiddleware(
-		http.HandlerFunc(cfg.handlerRevoke)))
+	mux.HandleFunc("POST /api/login", cfg.handlerLogin)
+	mux.HandleFunc("POST /api/refresh", cfg.handlerRefreshToken)
+	mux.HandleFunc("POST /api/revoke", cfg.handlerRevoke)
 
-	// admin endpoints
+	// admin endpoints //
 	mux.Handle("DELETE /admin/users/{id}", cfg.authMiddleware(
-		cfg.adminMiddleware(
-			http.HandlerFunc(cfg.handlerDeleteUserByID))))
+		cfg.adminMiddleware(http.HandlerFunc(cfg.handlerDeleteUserByID))))
 	mux.Handle("GET /admin/users", cfg.authMiddleware(
-		cfg.adminMiddleware(
-			http.HandlerFunc(cfg.handlerGetUsers))))
+		cfg.adminMiddleware(http.HandlerFunc(cfg.handlerGetUsers))))
 	mux.Handle("GET /admin/stats", cfg.authMiddleware(
-		cfg.adminMiddleware(
-			http.HandlerFunc(cfg.handlerGetAdminStats))))
+		cfg.adminMiddleware(http.HandlerFunc(cfg.handlerGetAdminStats))))
 	mux.Handle("GET /admin/endpoints", cfg.authMiddleware(
-		cfg.adminMiddleware(
-			http.HandlerFunc(cfg.handlerGetAllEndpoints))))
+		cfg.adminMiddleware(http.HandlerFunc(cfg.handlerGetAllEndpoints))))
 	mux.Handle("GET /admin/recent-activity", cfg.authMiddleware(
-		cfg.adminMiddleware(
-			http.HandlerFunc(cfg.handlerGetRecentActivity))))
+		cfg.adminMiddleware(http.HandlerFunc(cfg.handlerGetRecentActivity))))
 	mux.Handle("GET /admin/events", cfg.authMiddleware(
-		cfg.adminMiddleware(
-			http.HandlerFunc(cfg.handlerGetEvents))))
+		cfg.adminMiddleware(http.HandlerFunc(cfg.handlerGetEvents))))
 	mux.Handle("GET /admin/deliveries", cfg.authMiddleware(
-		cfg.adminMiddleware(
-			http.HandlerFunc(cfg.handlerGetDeliveries))))
+		cfg.adminMiddleware(http.HandlerFunc(cfg.handlerGetDeliveries))))
 
 	fileServer := http.FileServer(http.Dir("./internal/static"))
 	mux.Handle("/", fileServer)
