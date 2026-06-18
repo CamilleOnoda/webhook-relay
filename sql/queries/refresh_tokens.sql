@@ -3,9 +3,8 @@ INSERT INTO refresh_tokens(token, user_id, expires_at)
 VALUES($1, $2, $3)
 RETURNING *;
 
--- name: RevokeRefreshToken :one
+-- name: RevokeRefreshToken :execrows
 UPDATE refresh_tokens
-SET revoked_at = NOW(),
-    updated_at = NOW()
+SET revoked_at = NOW()
 WHERE token = $1
-RETURNING *;
+    AND revoked_at IS NULL;
