@@ -1,18 +1,9 @@
 # Webhook Relay Service
 
-A webhook relay service written in Go.
+A webhook relay service written in Go that receives webhook events, stores them in PostgreSQL, delivers them to downstream services, and automatically retries failed deliveries using exponential backoff.
 
-This project allows users to create webhook endpoints, receive incoming webhook events, store them in PostgreSQL, <br>and forward them to configured target URLs while tracking delivery results and request metadata.
-
-The project focuses heavily on backend fundamentals such as:
-
-- HTTP routing and request handling
-- Webhook forwarding behavior
-- JSON APIs
-- PostgreSQL persistence
-- Authentication and authorization
-- Header filtering and request safety
-- Delivery tracking and service architecture
+Built to explore reliable event delivery, authentication,
+background processing, and backend system design in Go.
 
 ---
 
@@ -24,13 +15,13 @@ I built this project to better understand what happens between the moment a webh
 
 The goal was not only to learn Go, but to gain experience with:
 
-- HTTP request handling
-- API design
-- Database persistence
-- Authentication and authorization
-- Request forwarding
-- Delivery tracking
-- Service architecture
+- Receiving incoming requests
+- Validating and storing data
+- Forwarding events to destination services
+- Handling delivery failures
+- Retrying failed deliveries
+- Managing user authentication and sessions
+- Monitoring system activity
 
 Rather than consuming webhooks through existing tools, I wanted to build the infrastructure myself and explore the challenges involved in receiving, storing, processing, and forwarding webhook events reliably.
 
@@ -38,20 +29,24 @@ This project became an opportunity to combine several backend concepts into a si
 
 ---
 
-## Table of Contents
+# Table of Contents
 
+- [Motivation](#motivation)
+- [Screenshots](#screenshots)
 - [Features](#features)
-- [Webhook Flow](#webhook-flow)
+- [Architecture](#architecture)
+- [Session Flow](#session-flow)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Quick Start](#quick-start)
 - [Usage](#usage)
-- [Header Filtering](#header-filtering)
 - [What I Learned](#what-i-learned)
-- [Post-MVP Roadmap](#post-mvp-roadmap)
+- [Future Improvements](#future-improvements)
 - [Deployment](#deployment)
 - [Contributing](#contributing)
 - [License](#license)
+
+---
 
 ## Screenshots
 
@@ -70,68 +65,100 @@ This project became an opportunity to combine several backend concepts into a si
 
 # Features
 
-## Webhook endpoints
-
-- Create webhook endpoints
-- Generate unique UUID-based webhook URLs
+## Webhook Management
+- Create and manage webhook endpoints
+- Generate unique webhook URLs
 - Store endpoint metadata in PostgreSQL
-- Delete endpoints and related webhook data
+- Delete endpoints and associated data
 
-## Webhook processing
-
+## Event Processing
 - Receive incoming webhook events
-- Store payloads and headers
-- Forward requests to external target URLs
-- Filter unsafe and hop-by-hop headers
-- Track delivery status and duration
-- Store response metadata and errors
+- Store payloads and metadata
+- Filter unsafe transport headers
+- Forward requests to destination services
+- Track delivery status and response codes
 
-## Authentication
+## Reliable Delivery
+- Automatic retry scheduling
+- Exponential backoff
+- Retry jitter to prevent retry storms
+- Delivery attempt tracking
+- Dead-letter queue support
+- Worker recovery after restarts
 
-- User registration
-- User login
-- Password hashing
-- JWT authentication
-- Protected API routes
-- Admin-only routes
+## Authentication & Authorization
+- User registration and login
+- Argon2id password hashing
+- JWT access tokens
+- Refresh token cookies
+- Automatic token refresh
+- Session revocation
+- Route protection middleware
+- Admin-only endpoints
 
-## Frontend dashboard
+## Dashboard
 
-A lightweight frontend is included for manual testing and endpoint management.
+### User Dashboard
+- Endpoint management
+- Event history
+- Delivery history
+- Delivery status tracking
 
-Built using:
+### Admin Dashboard
+- System-wide statistics
+- User management
+- Endpoint overview
+- Recent activity feed
+- Dead-letter inspection
+- Delivery monitoring
 
-- HTML
-- CSS
-- Vanilla JavaScript
-- fetch()
+## Implementation Details
+### Header filtering
+Before forwarding requests, the relay removes hop-by-hop headers such as:
 
-The frontend supports:
+- Host
+- Content-Length
+- Connection
+- Transfer-Encoding
+- Keep-Alive
 
-- Creating endpoints
-- Listing endpoints
-- Deleting endpoints
-- Sending test webhooks
-- Viewing webhook events
-- Viewing delivery history
+This prevents transport-level metadata from being incorrectly forwarded to downstream services.
 
 ---
 
-# Webhook Flow
+## Architecture
 
-1. A user creates a webhook endpoint through the API
-2. The relay generates a unique webhook URL:
+Webhook delivery is intentionally separated from request reception.
+When a webhook is received:
 
-```text
-/webhooks/{endpoint_id}
-```
+1. Endpoint is validated
+2. Event is persisted
+3. Delivery record is created
+4. Delivery worker processes the event
+5. Success or failure is recorded
+6. Failed deliveries are rescheduled
+7. Exhausted deliveries move to the dead-letter queue
 
-3. External services send webhook events to that URL
-4. The relay validates the endpoint ID
-5. The incoming payload and headers are stored
-6. Unsafe headers are filtered
-7. The webhook is forwarded to the configured target URL
-8. Delivery results are stored for later inspection
+This design allows delivery processing to continue independently of incoming requests and provides a foundation for future queue-based processing.
+
+## Session Flow
+
+Login creates two credentials:
+
+- Short-lived JWT access token
+- Long-lived refresh token stored as an HttpOnly cookie
+
+Flow:
+
+Login
+→ Access Token + Refresh Cookie
+→ Protected Request
+→ Access Token Expires
+→ Refresh Endpoint
+→ New Access Token
+→ Retry Original Request
+
+This allows sessions to remain active without repeatedly prompting users to log in.
 
 <table>
   <tr>
@@ -173,20 +200,43 @@ The frontend supports:
 # Project Structure
 
 ```text
-├── assets
-├── internal
-│   ├── auth
-│   ├── database
-│   └── service
-├── static
-├── sql
-│   └── schema
-├── .env
-├── .gitignore
+├── assets/
+├── internal/
+│   ├── auth/
+│   ├── database/
+│   ├── service/
+│   │   ├── delivery.go
+│   │   ├── delivery_integration_test.go
+│   │   ├── helper_unsafeHeaders.go
+│   │   └── is_retryable.go
+│   └── static/
+│       ├── admin.html
+│       ├── app.js
+│       ├── dashboard.html
+│       ├── index.html
+│       └── styles.css
+├── sql/
+│   ├── queries/
+│   │   ├── admin.sql
+│   │   ├── auth.sql
+│   │   ├── deliveries.sql
+│   │   ├── endpoints.sql
+│   │   ├── events.sql
+│   │   ├── refresh_tokens.sql
+│   │   └── users.sql
+│   └── schema/
 ├── admin_middleware.go
 ├── auth_middleware.go
 ├── create_endpoint_test.go
-├── go.mod
+├── handler_admin_dead_letter_get.go
+├── handler_admin_dead_letter_replay.go
+├── handler_admin_deliveries_get.go
+├── handler_admin_endpoints_get.go
+├── handler_admin_events_get.go
+├── handler_admin_recent_activity.go
+├── handler_admin_stats_get.go
+├── handler_admin_user_delete.go
+├── handler_admin_users_get.go
 ├── handler_deliveries_get.go
 ├── handler_endpoint_create.go
 ├── handler_endpointByID_delete.go
@@ -195,44 +245,18 @@ The frontend supports:
 ├── handler_endpoints_get.go
 ├── handler_events_get.go
 ├── handler_login.go
+├── handler_token_refresh.go
+├── handler_token_revoke.go
 ├── handler_users_create.go
-├── handler_users_delete.go
 ├── handler_webhook_receive.go
 ├── json.go
 ├── main.go
 ├── readiness.go
-├── README.md
+├── go.mod
+├── go.sum
 ├── sqlc.yaml
 ├── test_REST_client.http
-└── webhook-relay.git
-```
-
-## Important files
-```text
-| File | Responsibility |
-|---|---|
-| `main.go` | Starts the server and registers routes |
-| `json.go` | Shared JSON response helpers |
-| `readiness.go` | Health check handler |
-| `auth_middleware.go` | JWT authentication middleware |
-| `admin_middleware.go` | Admin authorization middleware |
-| `handler_login.go` | User login and JWT generation |
-| `handler_users_create.go` | User registration |
-| `handler_users_delete.go` | Admin route for deleting users |
-| `handler_endpoint_create.go` | Create a new webhook endpoint for the authenticated user |
-| `handler_endpoints_get.go` | Lists webhook endpoints for the authenticated user |
-| `handler_endpointByID_get.go` | Gets a specific endpoint by its ID for the authenticated user |
-| `handler_endpointByID_delete.go` | Deletes a specific endpoint by ID for the authenticated user |
-| `handler_endpoints_delete.go` | Admin endpoint cleanup route |
-| `handler_webhook_receive.go` | Receives incoming webhook requests |
-| `handler_events_get.go` | Lists all webhook events for the authenticated user |
-| `handler_deliveries_get.go` | Lists delivery history for the authenticated user |
-| `internal/auth` | Password hashing and JWT validation |
-| `internal/database` | sqlc-generated database layer |
-| `internal/service` | Webhook forwarding and header filtering |
-| `sql/schema` | Goose database migrations |
-| `static` | Frontend files |
-| `test_REST_client.http` | Manual API testing scenarios |
+└── README.md
 ```
 
 ---
@@ -305,182 +329,129 @@ http://localhost:8080
 ---
 
 # Usage
-
-## Health check
-
-```http
-GET /api/health
+## Create an Account
 ```
-
-Returns a readiness response.
-
----
-
-## Create user
-
-```http
 POST /api/users
 ```
 
-Example:
-
-```json
-{
-  "name": "Test User",
-  "email": "test@example.com",
-  "password": "password"
-}
-```
-
----
-
 ## Login
-
-```http
+```
 POST /api/login
 ```
 
-Returns a JWT token.
+Returns:
+- JWT access token
+- Refresh token cookie
 
----
-
-## Create endpoint
-
-```bash
-curl -X POST http://localhost:8080/api/endpoints \
--H "Authorization: Bearer YOUR_TOKEN" \
--H "Content-Type: application/json" \
--d '{
-  "name": "Test endpoint",
-  "target_url": "https://httpbin.org/post"
-}'
+## Create a Webhook Endpoint
+```
+POST /api/endpoints
 ```
 
-Example response:
-
-```json
+Response:
+```
 {
-  "id": "6d8e487d-1cd8-4bed-96a5-fbc98cde79be",
-  "name": "Test endpoint",
-  "target_url": "https://httpbin.org/post",
-  "generated_url": "http://localhost:8080/webhooks/6d8e487d-1cd8-4bed-96a5-fbc98cde79be"
+  "id": "...",
+  "generated_url": "/webhooks/{id}"
 }
 ```
 
----
-
-## Receive webhook
-
-```bash
+## Send a Test Webhook
+```
 curl -X POST http://localhost:8080/webhooks/{endpoint_id} \
 -H "Content-Type: application/json" \
--H "X-Event-Type: user.created" \
--d '{
-  "message": "hello"
-}'
+-d '{"event":"user.created"}'
 ```
 
-The relay stores the event and forwards it to the configured target URL.
-
----
-
-## List endpoints
-
-```http
-GET /api/endpoints
+## Inspect Results
 ```
-
----
-
-## List deliveries
-
-```http
+GET /api/events
 GET /api/deliveries
 ```
 
----
+## View:
 
-# Header Filtering
+- Stored events
+- Delivery attempts
+- Response status codes
+- Retry status
 
-Before forwarding requests, the relay removes unsafe and hop-by-hop headers such as:
+## Admin Dashboard
+Administrators can access:
 
-- Host
-- Content-Length
-- Transfer-Encoding
-- Connection
-- Keep-Alive
+- System statistics
+- User management
+- Endpoint monitoring
+- Recent activity
+- Dead-letter queue inspection
 
-This prevents forwarding invalid transport-level metadata to downstream services.
+### Admin API Routes
+```
+GET /admin/stats
+GET /admin/users
+GET /admin/endpoints
+GET /admin/recent-activity
+```
 
 ---
 
 # What I Learned
 
-This project helped me better understand:
+Building this project helped me gain hands-on experience with:
 
-- HTTP request/response lifecycle
-- Webhook architecture
-- Request forwarding behavior
-- Hop-by-hop headers
-- JSON serialization
-- JWT authentication
-- PostgreSQL persistence
+- REST API design
+- Authentication and authorization
+- Session management
+- JWTs and refresh tokens
+- PostgreSQL schema design
 - Database migrations
-- sqlc-generated queries
-- UUID-based routing
-- Delivery tracking patterns
+- sqlc
+- Webhook delivery systems
+- Retry and backoff strategies
+- Dead-letter queues
+- Background workers
 - Frontend/backend integration
-- Deployment workflows using Railway
+- Railway deployments
+- Production debugging
 
 ---
 
-# Post-MVP Roadmap
+# Future Improvements
 
 ## Authentication and session management
 
-- Token refresh and revocation flows
 - Refresh token rotation
-- Session expiration management
-- Logout and token validation
-- Persistent session tracking
-
-## Delivery system
-
-- Background worker queue
-- Retry logic with backoff
-- Delivery attempt limits
-- Dead-letter handling for failed deliveries that exceed retry limits, allowing problematic events<br>to be isolated and inspected without blocking the rest of the system
-- Async delivery processing to improve responsiveness<br>
-  and ensure webhook deliveries do not block API requests
+- Multiple concurrent sessions
+- Logout from all devices
+- Session management dashboard
 
 ## Security
 
-- Webhook signature verification to ensure incoming webhook requests are genuinely sent<br>by the platform and have not been tampered with during transit
-- Endpoint secrets that allow each webhook consumer to authenticate requests<br>using a shared secret unique to their endpoint
-- Request validation improvements to strengthen payload validation, enforce schema consistency,<br>and reduce the risk of malformed or malicious requests
+- Webhook signatures
+- Endpoint secrets
+- Enhanced request validation
 
 ## Scalability
 
-- Concurrency control to manage how many delivery jobs run at the same time,<br>preventing system overload and ensuring stable performance under heavy traffic
-- Rate limiting to restrict how frequently clients or endpoints can send requests,<br>protecting the service from abuse and maintaining reliability
-- Delivery worker pools to process webhook deliveries asynchronously using multiple workers,<br>improving efficiency and reducing delivery delays
-- Improved request throughput through performance optimizations that allow the system to handle<br>a larger number of requests and deliveries simultaneously
+- Queue-based delivery processing
+- Worker pools
+- Rate limiting
+- Concurrency controls
 
 ## Observability
 
-- Structured logs to make debugging and tracing requests easier across services
-- Metrics collection for tracking delivery success rates, latency, throughput, and system health
-- Monitoring and alerting to detect failures, downtime, or performance degradation in real time
-- Improved error tracing to better identify where and why delivery failures occur
-- Delivery diagnostics tools for inspecting webhook attempts, responses, retries, and failure details
+- Structured logging
+- Metrics
+- Alerting
+- Delivery analytics
 
 ## API improvements
 
 - Event filtering by type
 - Pagination
 - Search and filtering events, endpoints, or delivery attempts
-- Better delivery inspection tools
-- Add delivery retry endpoints that allow failed webhook deliveries to be manually retried
+- Manual delivery replay endpoints
+
 ---
 
 # Deployment
