@@ -4,11 +4,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/CamilleOnoda/webhook-relay.git/internal/database"
-	"github.com/CamilleOnoda/webhook-relay.git/internal/service"
 	"github.com/google/uuid"
 )
 
@@ -77,32 +75,9 @@ func (cfg *apiConfig) handlerReceiveWebhook(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	attemptResult, err := service.AttemptDelivery(r.Context(), event, endpoint.TargetUrl)
-	if err != nil {
-		log.Printf("failed to forward event_id=%s target_url=%s error=%v",
-			event.ID, endpoint.TargetUrl, err)
-	}
-
-	status := "success"
-	if err != nil || attemptResult.ErrorMessage.Valid {
-		status = "retry_scheduled"
-	}
-
-	if err := cfg.db.UpdateDelivery(r.Context(), database.UpdateDeliveryParams{
-		ID:                 delivery.ID,
-		Status:             status,
-		StatusCode:         attemptResult.StatusCode,
-		ResponseBody:       attemptResult.ResponseBody,
-		ErrorMessage:       attemptResult.ErrorMessage,
-		DeliveryDurationMs: attemptResult.DeliveryDurationMs,
-	}); err != nil {
-		respondWithError(w, http.StatusInternalServerError,
-			"Failed to update delivery record", err)
-		return
-	}
-
 	respondWithJSON(w, http.StatusAccepted, map[string]string{
-		"message": "Event received and delivery attempted",
+		"message":     "Event received and delivery queued",
+		"delivery_id": delivery.ID.String(),
 	})
 
 }
