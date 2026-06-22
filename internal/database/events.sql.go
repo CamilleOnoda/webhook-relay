@@ -46,6 +46,25 @@ func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (Webho
 	return i, err
 }
 
+const getEventByID = `-- name: GetEventByID :one
+SELECT id, endpoint_id, event_type, payload, headers, received_at FROM webhook_events
+WHERE id = $1
+`
+
+func (q *Queries) GetEventByID(ctx context.Context, id uuid.UUID) (WebhookEvent, error) {
+	row := q.db.QueryRowContext(ctx, getEventByID, id)
+	var i WebhookEvent
+	err := row.Scan(
+		&i.ID,
+		&i.EndpointID,
+		&i.EventType,
+		&i.Payload,
+		&i.Headers,
+		&i.ReceivedAt,
+	)
+	return i, err
+}
+
 const listEventsByUser = `-- name: ListEventsByUser :many
 SELECT
     webhook_events.id,

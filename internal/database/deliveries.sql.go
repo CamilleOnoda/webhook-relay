@@ -64,6 +64,117 @@ func (q *Queries) CreateDelivery(ctx context.Context, arg CreateDeliveryParams) 
 	return i, err
 }
 
+const getReadyDeliveries = `-- name: GetReadyDeliveries :many
+SELECT id, event_id, target_url, status, status_code, response_body, error_message, created_at, attempted_at, delivered_at, attempt_count, next_retry_at, delivery_duration_ms FROM deliveries
+WHERE status = 'pending' OR (status = 'retry_scheduled' AND next_retry_at <= NOW())
+ORDER BY created_at ASC
+LIMIT $1
+`
+
+func (q *Queries) GetReadyDeliveries(ctx context.Context, limit int32) ([]Delivery, error) {
+	rows, err := q.db.QueryContext(ctx, getReadyDeliveries, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Delivery
+	for rows.Next() {
+		var i Delivery
+		if err := rows.Scan(
+			&i.ID,
+			&i.EventID,
+			&i.TargetUrl,
+			&i.Status,
+			&i.StatusCode,
+			&i.ResponseBody,
+			&i.ErrorMessage,
+			&i.CreatedAt,
+			&i.AttemptedAt,
+			&i.DeliveredAt,
+			&i.AttemptCount,
+			&i.NextRetryAt,
+			&i.DeliveryDurationMs,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDeadLetterDeliveries = `-- name: ListDeadLetterDeliveries :many
+SELECT 
+    d.id,
+    d.target_url,
+    d.status,
+    d.status_code,
+    d.created_at,
+    d.delivery_duration_ms,
+    d.response_body,
+    d.error_message,
+    e.name AS endpoint_name,
+    u.name AS user_name
+FROM deliveries d
+JOIN webhook_events ev ON d.event_id = ev.id
+JOIN webhook_endpoints e ON ev.endpoint_id = e.id
+JOIN users u ON e.user_id = u.id
+WHERE d.status = 'dead_letter'
+ORDER BY d.created_at DESC
+`
+
+type ListDeadLetterDeliveriesRow struct {
+	ID                 uuid.UUID
+	TargetUrl          string
+	Status             string
+	StatusCode         sql.NullInt32
+	CreatedAt          time.Time
+	DeliveryDurationMs sql.NullInt32
+	ResponseBody       sql.NullString
+	ErrorMessage       sql.NullString
+	EndpointName       string
+	UserName           string
+}
+
+func (q *Queries) ListDeadLetterDeliveries(ctx context.Context) ([]ListDeadLetterDeliveriesRow, error) {
+	rows, err := q.db.QueryContext(ctx, listDeadLetterDeliveries)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListDeadLetterDeliveriesRow
+	for rows.Next() {
+		var i ListDeadLetterDeliveriesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.TargetUrl,
+			&i.Status,
+			&i.StatusCode,
+			&i.CreatedAt,
+			&i.DeliveryDurationMs,
+			&i.ResponseBody,
+			&i.ErrorMessage,
+			&i.EndpointName,
+			&i.UserName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listDeliveriesByUser = `-- name: ListDeliveriesByUser :many
 SELECT 
     deliveries.id,
@@ -121,39 +232,58 @@ func (q *Queries) ListDeliveriesByUser(ctx context.Context, userID uuid.NullUUID
 	return items, nil
 }
 
-const updateDelivery = `-- name: UpdateDelivery :exec
+const replayDeadLetterDelivery = `-- name: ReplayDeadLetterDelivery :exec
+UPDATE deliveries
+SET 
+    status = 'pending',
+    attempt_count = 0,
+    next_retry_at = NULL,
+    error_message = NULL,
+    status_code = NULL,
+    response_body = NULL
+WHERE id = $1 AND status = 'dead_letter'
+`
+
+func (q *Queries) ReplayDeadLetterDelivery(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, replayDeadLetterDelivery, id)
+	return err
+}
+
+const updateDeliveryState = `-- name: UpdateDeliveryState :exec
 UPDATE deliveries
 SET 
     status = $2,
     status_code = $3,
     response_body = $4,
     error_message = $5,
-    delivery_duration_ms = $6,
-    attempted_at = NOW(),
     attempt_count = attempt_count + 1,
-    delivered_at = CASE
-        WHEN $2 = 'success' THEN NOW()
-        ELSE delivered_at
-END
+    attempted_at = NOW(),
+    next_retry_at = $6,
+    delivered_at = $7,
+    delivery_duration_ms = $8
 WHERE id = $1
 `
 
-type UpdateDeliveryParams struct {
+type UpdateDeliveryStateParams struct {
 	ID                 uuid.UUID
 	Status             string
 	StatusCode         sql.NullInt32
 	ResponseBody       sql.NullString
 	ErrorMessage       sql.NullString
+	NextRetryAt        sql.NullTime
+	DeliveredAt        sql.NullTime
 	DeliveryDurationMs sql.NullInt32
 }
 
-func (q *Queries) UpdateDelivery(ctx context.Context, arg UpdateDeliveryParams) error {
-	_, err := q.db.ExecContext(ctx, updateDelivery,
+func (q *Queries) UpdateDeliveryState(ctx context.Context, arg UpdateDeliveryStateParams) error {
+	_, err := q.db.ExecContext(ctx, updateDeliveryState,
 		arg.ID,
 		arg.Status,
 		arg.StatusCode,
 		arg.ResponseBody,
 		arg.ErrorMessage,
+		arg.NextRetryAt,
+		arg.DeliveredAt,
 		arg.DeliveryDurationMs,
 	)
 	return err

@@ -14,3 +14,7 @@ JOIN webhook_endpoints
     ON webhook_events.endpoint_id = webhook_endpoints.id
 WHERE webhook_endpoints.user_id = $1
 ORDER BY webhook_events.received_at DESC;
+
+-- name: GetEventByID :one
+SELECT * FROM webhook_events
+WHERE id = $1;
