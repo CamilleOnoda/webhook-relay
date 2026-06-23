@@ -8,7 +8,7 @@ type Stats struct {
 	Users                    int64 `json:"users"`
 	EventsReceived           int64 `json:"events_received"`
 	SucessfulDeliveries      int64 `json:"successful_deliveries"`
-	FailedDeliveries         int64 `json:"failed_deliveries"`
+	DeadLetter               int64 `json:"dead_letter"`
 	RetryScheduledDeliveries int64 `json:"retry_scheduled_deliveries"`
 }
 
@@ -30,7 +30,7 @@ func (cfg *apiConfig) handlerGetAdminStats(w http.ResponseWriter, r *http.Reques
 		Users:                    stats.Users,
 		EventsReceived:           stats.EventsReceived,
 		SucessfulDeliveries:      stats.SuccessfulDeliveries,
-		FailedDeliveries:         stats.FailedDeliveries,
+		DeadLetter:               stats.DeadLetter,
 		RetryScheduledDeliveries: stats.RetryScheduledDeliveries,
 	}
 
