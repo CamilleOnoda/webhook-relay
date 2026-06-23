@@ -31,7 +31,7 @@ func (cfg *apiConfig) handlerGetEndpointByID(w http.ResponseWriter, r *http.Requ
 	id, err := uuid.Parse(endpointID)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest,
-			"Invalid endpoint ID format", err)
+			"Invalid uuid format", err)
 		return
 	}
 
