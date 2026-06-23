@@ -84,6 +84,7 @@ This project became an opportunity to combine several backend concepts into a si
 - Retry jitter to prevent retry storms
 - Delivery attempt tracking
 - Dead-letter queue support
+- Dead-letter replay
 - Worker recovery after restarts
 
 ## Authentication & Authorization
@@ -102,6 +103,9 @@ This project became an opportunity to combine several backend concepts into a si
 - Endpoint management
 - Event history
 - Delivery history
+- Successful delivery metrics
+- Retry scheduled metrics
+- Dead-letter metrics
 - Delivery status tracking
 
 ### Admin Dashboard
@@ -111,6 +115,9 @@ This project became an opportunity to combine several backend concepts into a si
 - Recent activity feed
 - Dead-letter inspection
 - Delivery monitoring
+- Delivery details modal
+- Dead-letter replay
+- Attempt count monitoring
 
 ## Implementation Details
 ### Header filtering
@@ -138,8 +145,31 @@ When a webhook is received:
 5. Success or failure is recorded
 6. Failed deliveries are rescheduled
 7. Exhausted deliveries move to the dead-letter queue
+8. Administrators can replay dead-letter deliveries
+9. Replayed deliveries re-enter the delivery workflow
 
 This design allows delivery processing to continue independently of incoming requests and provides a foundation for future queue-based processing.
+
+## Delivery Lifecycle
+```text
+pending
+    ↓
+success
+```
+
+```text
+pending
+    ↓
+retry_scheduled
+    ↓
+retry_scheduled
+    ↓
+dead_letter
+    ↓
+admin replay
+    ↓
+pending
+```
 
 ## Session Flow
 
@@ -413,6 +443,10 @@ Building this project helped me gain hands-on experience with:
 - Frontend/backend integration
 - Railway deployments
 - Production debugging
+- Background job processing
+- Failure recovery strategies
+- Dead-letter queue design
+- Operational monitoring dashboards
 
 ---
 
@@ -450,7 +484,6 @@ Building this project helped me gain hands-on experience with:
 - Event filtering by type
 - Pagination
 - Search and filtering events, endpoints, or delivery attempts
-- Manual delivery replay endpoints
 
 ---
 
