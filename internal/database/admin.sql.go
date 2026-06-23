@@ -27,7 +27,7 @@ SELECT
   (SELECT COUNT(*) FROM users) AS users,
   (SELECT COUNT(*) FROM webhook_events) AS events_received,
   (SELECT COUNT(*) FROM deliveries WHERE status = 'success') AS successful_deliveries,
-  (SELECT COUNT(*) FROM deliveries WHERE status = 'failed') AS failed_deliveries,
+  (SELECT COUNT(*) FROM deliveries WHERE status = 'dead_letter') AS dead_letter,
   (SELECT COUNT(*) FROM deliveries WHERE status = 'retry_scheduled') AS retry_scheduled_deliveries
 `
 
@@ -35,7 +35,7 @@ type GetAdminStatsRow struct {
 	Users                    int64
 	EventsReceived           int64
 	SuccessfulDeliveries     int64
-	FailedDeliveries         int64
+	DeadLetter               int64
 	RetryScheduledDeliveries int64
 }
 
@@ -46,7 +46,7 @@ func (q *Queries) GetAdminStats(ctx context.Context) (GetAdminStatsRow, error) {
 		&i.Users,
 		&i.EventsReceived,
 		&i.SuccessfulDeliveries,
-		&i.FailedDeliveries,
+		&i.DeadLetter,
 		&i.RetryScheduledDeliveries,
 	)
 	return i, err
@@ -266,7 +266,9 @@ SELECT
   u.name AS user_name,
   e.event_type,
   COALESCE(d.status, 'pending') AS latest_delivery_status,
-  d.status_code AS latest_delivery_status_code
+  d.status_code AS latest_delivery_status_code,
+  COALESCE(d.attempt_count, 0) AS attempt_count,
+  d.id AS delivery_id
 FROM webhook_events e
 JOIN webhook_endpoints ep
   ON ep.id = e.endpoint_id
@@ -276,7 +278,9 @@ LEFT JOIN LATERAL (
   SELECT
     status,
     status_code,
-    created_at
+    created_at,
+    attempt_count,
+    id
   FROM deliveries
   WHERE deliveries.event_id = e.id
   ORDER BY created_at DESC
@@ -294,6 +298,8 @@ type GetRecentActivityRow struct {
 	EventType                sql.NullString
 	LatestDeliveryStatus     string
 	LatestDeliveryStatusCode sql.NullInt32
+	AttemptCount             int32
+	DeliveryID               uuid.UUID
 }
 
 func (q *Queries) GetRecentActivity(ctx context.Context) ([]GetRecentActivityRow, error) {
@@ -313,6 +319,8 @@ func (q *Queries) GetRecentActivity(ctx context.Context) ([]GetRecentActivityRow
 			&i.EventType,
 			&i.LatestDeliveryStatus,
 			&i.LatestDeliveryStatusCode,
+			&i.AttemptCount,
+			&i.DeliveryID,
 		); err != nil {
 			return nil, err
 		}
