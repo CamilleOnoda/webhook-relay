@@ -472,6 +472,69 @@ button:hover {
   background: #f8fafc;
 }
 
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-card {
+  width: min(620px, 92vw);
+  background: white;
+  border-radius: 18px;
+  padding: 1.5rem;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.modal-close {
+  background: transparent;
+  color: #64748b;
+  font-size: 1.6rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.detail-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.detail-row {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.6rem;
+}
+
+.detail-label {
+  font-weight: 700;
+  color: #475569;
+}
+
+.detail-value {
+  color: #172033;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 768px) {
   body {
     padding: 1rem;

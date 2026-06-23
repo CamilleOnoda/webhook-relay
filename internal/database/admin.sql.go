@@ -22,6 +22,62 @@ func (q *Queries) DeleteAllEndpoints(ctx context.Context) error {
 	return err
 }
 
+const getAdminDeliveryDetails = `-- name: GetAdminDeliveryDetails :one
+SELECT
+  d.id,
+  ep.name AS endpoint_name,
+  d.target_url,
+  d.status,
+  d.attempt_count,
+  d.status_code,
+  d.error_message,
+  d.next_retry_at,
+  d.created_at,
+  d.attempted_at,
+  d.delivered_at
+FROM deliveries d
+JOIN webhook_events e
+  ON e.id = d.event_id
+JOIN webhook_endpoints ep
+  ON ep.id = e.endpoint_id
+JOIN users u
+  ON u.id = ep.user_id
+WHERE d.id = $1
+`
+
+type GetAdminDeliveryDetailsRow struct {
+	ID           uuid.UUID
+	EndpointName string
+	TargetUrl    string
+	Status       string
+	AttemptCount int32
+	StatusCode   sql.NullInt32
+	ErrorMessage sql.NullString
+	NextRetryAt  sql.NullTime
+	CreatedAt    time.Time
+	AttemptedAt  sql.NullTime
+	DeliveredAt  sql.NullTime
+}
+
+func (q *Queries) GetAdminDeliveryDetails(ctx context.Context, id uuid.UUID) (GetAdminDeliveryDetailsRow, error) {
+	row := q.db.QueryRowContext(ctx, getAdminDeliveryDetails, id)
+	var i GetAdminDeliveryDetailsRow
+	err := row.Scan(
+		&i.ID,
+		&i.EndpointName,
+		&i.TargetUrl,
+		&i.Status,
+		&i.AttemptCount,
+		&i.StatusCode,
+		&i.ErrorMessage,
+		&i.NextRetryAt,
+		&i.CreatedAt,
+		&i.AttemptedAt,
+		&i.DeliveredAt,
+	)
+	return i, err
+}
+
 const getAdminStats = `-- name: GetAdminStats :one
 SELECT
   (SELECT COUNT(*) FROM users) AS users,

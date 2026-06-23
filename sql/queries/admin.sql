@@ -93,3 +93,25 @@ LIMIT 10;
 
 -- name: DeleteAllEndpoints :exec
 DELETE FROM webhook_endpoints;
+
+-- name: GetAdminDeliveryDetails :one
+SELECT
+  d.id,
+  ep.name AS endpoint_name,
+  d.target_url,
+  d.status,
+  d.attempt_count,
+  d.status_code,
+  d.error_message,
+  d.next_retry_at,
+  d.created_at,
+  d.attempted_at,
+  d.delivered_at
+FROM deliveries d
+JOIN webhook_events e
+  ON e.id = d.event_id
+JOIN webhook_endpoints ep
+  ON ep.id = e.endpoint_id
+JOIN users u
+  ON u.id = ep.user_id
+WHERE d.id = $1;

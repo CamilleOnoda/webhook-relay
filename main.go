@@ -94,6 +94,8 @@ func main() {
 		cfg.authMiddleware(cfg.adminMiddleware(http.HandlerFunc(cfg.handlerReplayDeadLetter))))
 	mux.Handle("GET /admin/deliveries/dead-letter",
 		cfg.authMiddleware(cfg.adminMiddleware(http.HandlerFunc(cfg.handlerGetDeadLetters))))
+	mux.Handle("GET /admin/deliveries/{id}",
+		cfg.authMiddleware((cfg.adminMiddleware(http.HandlerFunc(cfg.handlerGetAdminDeliveryDetails)))))
 
 	fileServer := http.FileServer(http.Dir("./internal/static"))
 	mux.Handle("/", fileServer)

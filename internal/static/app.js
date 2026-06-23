@@ -569,6 +569,20 @@ const userList = document.getElementById("admin-user-list");
 const adminEndpointList = document.getElementById("admin-endpoint-list")
 const adminRecentActivityList = document.getElementById("admin-recent-activity-list")
 
+const deliveryDetailModal = document.getElementById("delivery-detail-modal");
+const deliveryDetailContent = document.getElementById("delivery-detail-content");
+const deliveryDetailClose = document.getElementById("delivery-detail-close");
+
+deliveryDetailClose?.addEventListener("click", () => {
+  deliveryDetailModal.classList.add("hidden");
+});
+
+deliveryDetailModal?.addEventListener("click", (event) => {
+  if (event.target === deliveryDetailModal) {
+    deliveryDetailModal.classList.add("hidden");
+  }
+});
+
 if (userList) {
   loadAdminUsers();
   loadAdminStats();
@@ -668,7 +682,7 @@ function createActivityMenu(activity) {
   menu.className = "endpoint-menu hidden";
 
   const viewButton = createMenuButton("View details", async () => {
-    console.log(activity);
+    await loadAdminDeliveryDetails(activity.delivery_id);
   });
 
   menu.appendChild(viewButton);
@@ -690,6 +704,60 @@ function createActivityMenu(activity) {
 
   wrapper.append(menuButton, menu);
   return wrapper;
+}
+
+async function loadAdminDeliveryDetails(deliveryID) {
+  const response = await authFetch(`/admin/deliveries/${deliveryID}`);
+
+  if (!response.ok) {
+    throw new Error("Failed to load delivery details");
+  }
+
+  const delivery = await response.json();
+  renderDeliveryDetails(delivery);
+}
+
+function renderDeliveryDetails(delivery) {
+  deliveryDetailContent.replaceChildren();
+
+  deliveryDetailContent.append(
+    createDetailRow("Endpoint", delivery.endpoint_name),
+    createDetailRow("Status", delivery.status),
+    createDetailRow("Attempts", `${delivery.attempt_count}/5`),
+    createDetailRow("Last Status Code", delivery.status_code ?? "---"),
+    createDetailRow("Last Error", delivery.error_message ?? "---"),
+    createDetailRow("Target URL", delivery.target_url),
+    createDetailRow("Next Retry", formatNullableDate(delivery.next_retry_at)),
+    createDetailRow("Created", formatNullableDate(delivery.created_at)),
+    createDetailRow("Last Attempt", formatNullableDate(delivery.attempted_at)),
+    createDetailRow("Delivered At", formatNullableDate(delivery.delivered_at)),
+  );
+
+  deliveryDetailModal.classList.remove("hidden");
+}
+
+function createDetailRow(label, value) {
+  const row = document.createElement("div");
+  row.className = "detail-row";
+
+  const labelEl = document.createElement("div");
+  labelEl.className = "detail-label";
+  labelEl.textContent = label;
+
+  const valueEl = document.createElement("div");
+  valueEl.className = "detail-value";
+  valueEl.textContent = value ?? "---";
+
+  row.append(labelEl, valueEl);
+  return row;
+}
+
+function formatNullableDate(value) {
+  if (!value) {
+    return "---";
+  }
+
+  return new Date(value).toLocaleString();
 }
 
 async function replayDeadLetter(deliveryID) {
