@@ -90,7 +90,7 @@ func main() {
 		cfg.authMiddleware(cfg.adminMiddleware(http.HandlerFunc(cfg.handlerGetEvents))))
 	mux.Handle("GET /admin/deliveries",
 		cfg.authMiddleware(cfg.adminMiddleware(http.HandlerFunc(cfg.handlerGetDeliveries))))
-	mux.Handle("POST /admin/deliveries/{id}/replay",
+	mux.Handle("POST /admin/dead-letter/{id}/replay",
 		cfg.authMiddleware(cfg.adminMiddleware(http.HandlerFunc(cfg.handlerReplayDeadLetter))))
 	mux.Handle("GET /admin/deliveries/dead-letter",
 		cfg.authMiddleware(cfg.adminMiddleware(http.HandlerFunc(cfg.handlerGetDeadLetters))))
