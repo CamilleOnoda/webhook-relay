@@ -50,13 +50,40 @@ This project became an opportunity to combine several backend concepts into a si
 
 ## Screenshots
 
+### Dashboards
+
 <table>
   <tr>
     <td align="center">
-      <img src="assets/login.png" height="320">
+      <strong>User Dashboard</strong><br>
+      Manage webhook endpoints, monitor delivery metrics,<br>and inspect recent activity.<br><br>
+      <img src="assets/user-dashboard.png" width="400">
     </td>
     <td align="center">
-      <img src="assets/dashboard.png" height="350">
+      <strong>Admin Dashboard</strong><br>
+      Monitor users, endpoints, delivery outcomes, retry queues,<br>and dead-letter events across the system.<br><br>
+      <img src="assets/admin-dashboard.png" width="500">
+    </td>
+  </tr>
+</table>
+
+### Delivery Lifecycle
+
+Successful deliveries, scheduled retries, and dead-lettered events can be inspected individually.
+
+<table>
+  <tr>
+    <td align="center">
+      <strong>Success</strong><br>
+      <img src="assets/delivery-success.png" width="300">
+    </td>
+    <td align="center">
+      <strong>Retry Scheduled</strong><br>
+      <img src="assets/delivery-retry.png" width="300">
+    </td>
+    <td align="center">
+      <strong>Dead Letter</strong><br>
+      <img src="assets/delivery-deadletter.png" width="300">
     </td>
   </tr>
 </table>
@@ -150,6 +177,10 @@ When a webhook is received:
 
 This design allows delivery processing to continue independently of incoming requests and provides a foundation for future queue-based processing.
 
+<p align="center">
+  <img src="assets/webhook-architecture.png" width="500">
+</p>
+
 ## Delivery Lifecycle
 ```text
 pending
@@ -193,10 +224,7 @@ This allows sessions to remain active without repeatedly prompting users to log 
 <table>
   <tr>
     <td align="center">
-      <img src="assets/webhook-diagram.png" height="350" width="350">
-    </td>
-    <td align="center">
-      <img src="assets/webhook.gif" height="350" width="350">
+      <img src="assets/session-flow.png" width="500">
     </td>
   </tr>
 </table>
