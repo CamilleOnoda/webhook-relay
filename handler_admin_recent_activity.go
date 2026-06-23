@@ -9,12 +9,14 @@ import (
 
 type recentActivity struct {
 	EventID                  uuid.UUID `json:"event_id"`
+	DeliveryID               uuid.UUID `json:"delivery_id"`
 	ReceivedAt               time.Time `json:"received_at"`
 	EndpointName             string    `json:"endpoint_name"`
 	UserName                 string    `json:"user_name"`
 	EventType                *string   `json:"event_type"`
 	LatestDeliveryStatus     string    `json:"latest_delivery_status"`
 	LatestDeliveryStatusCode *int32    `json:"latest_delivery_status_code"`
+	AttemptCount             int32     `json:"attempt_count"`
 }
 
 func (cfg *apiConfig) handlerGetRecentActivity(w http.ResponseWriter, r *http.Request) {
@@ -44,10 +46,12 @@ func (cfg *apiConfig) handlerGetRecentActivity(w http.ResponseWriter, r *http.Re
 		}
 		responseActivity = append(responseActivity, recentActivity{
 			EventID:                  recentAct.EventID,
+			DeliveryID:               recentAct.DeliveryID,
 			ReceivedAt:               recentAct.ReceivedAt,
 			EndpointName:             recentAct.EndpointName,
 			UserName:                 recentAct.UserName,
 			EventType:                eventType,
+			AttemptCount:             recentAct.AttemptCount,
 			LatestDeliveryStatus:     recentAct.LatestDeliveryStatus,
 			LatestDeliveryStatusCode: statusCode,
 		})
