@@ -29,7 +29,7 @@ ORDER BY deliveries.created_at DESC;
 -- name: GetReadyDeliveries :many
 SELECT * FROM deliveries
 WHERE status = 'pending' OR (status = 'retry_scheduled' AND next_retry_at <= NOW())
-ORDER BY created_at ASC
+ORDER BY COALESCE(next_retry_at, created_at) ASC
 LIMIT $1;
 
 -- name: UpdateDeliveryState :exec

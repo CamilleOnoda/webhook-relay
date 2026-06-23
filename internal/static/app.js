@@ -530,8 +530,16 @@ async function loadDeliveries() {
     }
 
     const deliveries = await response.json();
-    deliveryCount.textContent = deliveries.length;
     deliveryList.textContent = "";
+
+    successfulDeliveryCount.textContent =
+    deliveries.filter((delivery) => delivery.status === "success").length;
+
+    retryScheduledDeliveryCount.textContent =
+    deliveries.filter((delivery) => delivery.status === "retry_scheduled").length;
+
+    deadLetterCount.textContent =
+    deliveries.filter((delivery) => delivery.status === "dead_letter").length;
 
     if (deliveries.length === 0) {
       deliveryList.textContent = "No deliveries yet.";

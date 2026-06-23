@@ -108,7 +108,7 @@ func (p *DatabaseDeliveryProcessor) ProcessPendingDeliveries(ctx context.Context
 		} else {
 			deliveryStatus = "dead_letter"
 			log.Printf("Dead-Letter Queue: Delivery %s moving to dead_letter. Reason: code=%d, err=%v",
-				delivery.ID, statusCode, deliveryErr)
+				delivery.ID, statusCode, result.ErrorMessage.String)
 		}
 
 		err = p.db.UpdateDeliveryState(ctx, database.UpdateDeliveryStateParams{
@@ -199,7 +199,7 @@ func (s *DeliveryService) AttemptDelivery(ctx context.Context, event database.We
 	if err != nil {
 		return DeliveryResult{
 			ErrorMessage: sql.NullString{String: err.Error(), Valid: true},
-		}, nil
+		}, err
 	}
 	defer resp.Body.Close()
 

@@ -67,7 +67,7 @@ func (q *Queries) CreateDelivery(ctx context.Context, arg CreateDeliveryParams) 
 const getReadyDeliveries = `-- name: GetReadyDeliveries :many
 SELECT id, event_id, target_url, status, status_code, response_body, error_message, created_at, attempted_at, delivered_at, attempt_count, next_retry_at, delivery_duration_ms FROM deliveries
 WHERE status = 'pending' OR (status = 'retry_scheduled' AND next_retry_at <= NOW())
-ORDER BY created_at ASC
+ORDER BY COALESCE(next_retry_at, created_at) ASC
 LIMIT $1
 `
 
