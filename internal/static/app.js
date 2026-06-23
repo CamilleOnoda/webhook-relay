@@ -148,7 +148,7 @@ const endpointDetail = document.getElementById("endpoint-detail");
 const userCount = document.getElementById("user-count");
 const eventCount = document.getElementById("event-count");
 const successfulDeliveryCount = document.getElementById("successful-delivery-count");
-const failedDeliveryCount = document.getElementById("failed-delivery-count");
+const deadLetterCount = document.getElementById("dead-letter-count");
 const retryScheduledDeliveryCount = document.getElementById("retry-scheduled-count")
 
 if (endpointList) {
@@ -621,6 +621,9 @@ async function loadAdminRecentActivity() {
       const eventType = document.createElement("td");
       eventType.textContent = activity.event_type;
 
+      const attempts = document.createElement("td");
+      attempts.textContent = `${activity.attempt_count+"/5"}`;
+
       const status = document.createElement("td");
       const badge = document.createElement("span");
       badge.textContent = activity.latest_delivery_status;
@@ -632,17 +635,14 @@ async function loadAdminRecentActivity() {
 
       const actions = document.createElement("td");
       actions.className = "activity-actions";
-      const menuButton = document.createElement("button");
-      menuButton.className = "menu-button";
-      menuButton.type = "button";
-      menuButton.textContent = "⋮";
-      actions.appendChild(menuButton);
+      actions.appendChild(createActivityMenu(activity));
 
       row.append(
         time,
         endpoint,
         user,
         eventType,
+        attempts,
         status,
         code,
         actions,
@@ -653,6 +653,60 @@ async function loadAdminRecentActivity() {
   } catch(error) {
     console.error(error);
   };
+}
+
+function createActivityMenu(activity) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "endpoint-menu-wrapper";
+
+  const menuButton = document.createElement("button");
+  menuButton.className = "menu-button";
+  menuButton.type = "button";
+  menuButton.textContent = "⋮";
+
+  const menu = document.createElement("div");
+  menu.className = "endpoint-menu hidden";
+
+  const viewButton = createMenuButton("View details", async () => {
+    console.log(activity);
+  });
+
+  menu.appendChild(viewButton);
+
+  if (activity.latest_delivery_status === "dead_letter") {
+    const replayButton = createMenuButton("Replay delivery", async () => {
+      await replayDeadLetter(activity.delivery_id);
+    });
+
+    replayButton.classList.add("danger");
+    menu.appendChild(replayButton);
+  }
+
+  menuButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    closeEndpointMenus();
+    menu.classList.toggle("hidden");
+  });
+
+  wrapper.append(menuButton, menu);
+  return wrapper;
+}
+
+async function replayDeadLetter(deliveryID) {
+  if (!confirm("Replay this dead-letter delivery?")) {
+    return;
+  }
+
+  const response = await authFetch(`/admin/dead-letter/${deliveryID}/replay`, {
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to replay delivery");
+  }
+
+  await loadAdminStats();
+  await loadAdminRecentActivity();
 }
 
 async function loadAdminEndpoints() {
@@ -705,7 +759,7 @@ async function loadAdminStats() {
   userCount.textContent = stats.users;
   eventCount.textContent = stats.events_received;
   successfulDeliveryCount.textContent = stats.successful_deliveries;
-  failedDeliveryCount.textContent = stats.failed_deliveries;
+  deadLetterCount.textContent = stats.dead_letter;
   retryScheduledDeliveryCount.textContent = stats.retry_scheduled_deliveries
 }
 

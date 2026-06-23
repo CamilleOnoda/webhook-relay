@@ -55,7 +55,7 @@ body {
   background: #dcfce7;
 }
 
-.status-failed {
+.status-dead_letter {
   color: #dc2626;
   background: #fee2e2;
 }
