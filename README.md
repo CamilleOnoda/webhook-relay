@@ -387,6 +387,17 @@ http://localhost:8080
 ---
 
 # Usage
+## Demo Credentials
+
+If you'd like to explore the application without creating an account, use one of the demo users:
+
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@test.com | password1234 |
+| User | user@test.com | password1234 |
+
+You can also register your own account using the endpoint below.
+
 ## Create an Account
 ```
 POST /api/users
