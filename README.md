@@ -7,6 +7,24 @@ background processing, and backend system design in Go.
 
 ---
 
+# Live Demo
+Try the deployed application:
+
+👉 https://webhook-relay-production-5e97.up.railway.app/
+
+### Demo Credentials
+
+If you'd like to explore the application without creating an account, use one of the demo users:
+
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@test.com | password1234 |
+| User | user@test.com | password1234 |
+
+You can also register your own account if you'd like to test the registration flow.
+
+---
+
 # Motivation
 
 Many modern applications rely on webhooks to communicate between services, yet the mechanics behind webhook delivery are often hidden behind third-party platforms.
@@ -387,17 +405,6 @@ http://localhost:8080
 ---
 
 # Usage
-## Demo Credentials
-
-If you'd like to explore the application without creating an account, use one of the demo users:
-
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@test.com | password1234 |
-| User | user@test.com | password1234 |
-
-You can also register your own account using the endpoint below.
-
 ## Create an Account
 ```
 POST /api/users
@@ -426,10 +433,15 @@ Response:
 ```
 
 ## Send a Test Webhook
-```
+There are two ways to generate webhook events:
+
+- Click **Send Test** from the User Dashboard.
+- Send a POST request directly to your webhook URL:
+
+```bash
 curl -X POST http://localhost:8080/webhooks/{endpoint_id} \
 -H "Content-Type: application/json" \
--d '{"event":"user.created"}'
+-d '{"type":"payment.success"}'
 ```
 
 ## Inspect Results
