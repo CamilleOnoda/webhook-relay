@@ -434,13 +434,25 @@ async function deleteEndpoint(endpointID) {
   }
 }
 
+const eventTypes = [
+  "payment.success",
+  "payment.failed",
+  "user.created",
+  "subscription.renewed",
+  "order.shipped",
+];
+
+function randomEventType() {
+  return eventTypes[Math.floor(Math.random() * eventTypes.length)];
+}
+
 async function sendTestWebhook(endpointID, endpointName, div) {
   try {
     const response = await authFetch(`/webhooks/${endpointID}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Event-Type": "payment.success",
+        "X-Event-Type": randomEventType(),
       },
       body: JSON.stringify({
         message: "Hello from my dashboard",
