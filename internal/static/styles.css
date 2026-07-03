@@ -112,14 +112,14 @@ body {
 }
 
 .delete-button {
-  background: #eb4d4d;
+  background: #e96262;
   color: white;
   padding: 0.5rem 1rem;
   font-size: 0.9rem;
 }
 
 .delete-button:hover {
-  background: #bc2b2b;
+  background: #af3333;
 }
 
 .admin-bottom {
