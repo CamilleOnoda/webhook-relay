@@ -1,9 +1,18 @@
 # Webhook Relay Service
 
-A webhook relay service written in Go that receives webhook events, stores them in PostgreSQL, delivers them to downstream services, and automatically retries failed deliveries using exponential backoff.
+<p align="center">
+  <img src="assets/system-overview.png" width="900">
+</p>
+An automated post office for HTTP messages. The relay receives webhook events, stores them, delivers them asynchronously, automatically retries transient failures using exponential backoff, and exposes delivery status through user and admin dashboards. Built in Go to explore reliable event delivery, authentication, background workers, and backend system design.
 
-Built to explore reliable event delivery, authentication,
-background processing, and backend system design in Go.
+---
+
+## Repository Highlights
+
+- 🚀 **Asynchronous webhook delivery** — incoming webhooks are accepted quickly, while delivery processing happens in the background.
+- 🔄 **Automatic retries with exponential backoff** — failed deliveries are rescheduled instead of being lost immediately.
+- 🔐 **JWT + refresh token authentication** — users stay authenticated with short-lived access tokens and secure refresh cookies.
+- 📊 **User & admin monitoring dashboards** — delivery status, retries, dead letters, endpoints, and users can be inspected from the UI.
 
 ---
 
@@ -27,23 +36,10 @@ You can also register your own account if you'd like to test the registration fl
 
 # Motivation
 
-Many modern applications rely on webhooks to communicate between services, yet the mechanics behind webhook delivery are often hidden behind third-party platforms.
+Many modern applications rely on webhooks, but I realized I had never really thought about what happened after an external service sent an event. I wanted to build that missing piece myself.
 
-I built this project to better understand what happens between the moment a webhook is received and the moment it reaches its destination.
-
-The goal was not only to learn Go, but to gain experience with:
-
-- Receiving incoming requests
-- Validating and storing data
-- Forwarding events to destination services
-- Handling delivery failures
-- Retrying failed deliveries
-- Managing user authentication and sessions
-- Monitoring system activity
-
-Rather than consuming webhooks through existing tools, I wanted to build the infrastructure myself and explore the challenges involved in receiving, storing, processing, and forwarding webhook events reliably.
-
-This project became an opportunity to combine several backend concepts into a single application while simulating the kind of event-driven systems commonly used in production environments.
+I started thinking of a webhook relay as an automated post office for HTTP messages—receiving events, keeping track of deliveries, retrying failed ones, and making sure messages eventually reach their destination.
+That simple idea became an opportunity to explore authentication, background workers, retry scheduling, dead-letter queues, and reliable event delivery in Go.
 
 ---
 
@@ -209,23 +205,27 @@ This design allows delivery processing to continue independently of incoming req
 
 ## Delivery Lifecycle
 ```text
-pending
-    ↓
-success
-```
-
-```text
-pending
-    ↓
-retry_scheduled
-    ↓
-retry_scheduled
-    ↓
-dead_letter
-    ↓
-admin replay
-    ↓
-pending
+Webhook Received
+        │
+        ▼
+     Pending
+        │
+ ┌──────┴────────┐
+ │               │
+ ▼               ▼
+Success     Retry Scheduled
+                 │
+                 ▼
+         Exponential Backoff
+                 │
+                 ▼
+      Max Retries Reached
+                 │
+                 ▼
+          Dead-letter Queue
+                 │
+                 ▼
+          Admin Replay
 ```
 
 ## Session Flow
@@ -284,65 +284,20 @@ This allows sessions to remain active without repeatedly prompting users to log 
 # Project Structure
 
 ```text
-├── assets/
-├── internal/
-│   ├── auth/
-│   ├── database/
-│   ├── service/
-│   │   ├── delivery.go
-│   │   ├── delivery_integration_test.go
-│   │   ├── helper_unsafeHeaders.go
-│   │   └── is_retryable.go
-│   └── static/
-│       ├── admin.html
-│       ├── app.js
-│       ├── dashboard.html
-│       ├── index.html
-│       └── styles.css
-├── sql/
-│   ├── queries/
-│   │   ├── admin.sql
-│   │   ├── auth.sql
-│   │   ├── deliveries.sql
-│   │   ├── endpoints.sql
-│   │   ├── events.sql
-│   │   ├── refresh_tokens.sql
-│   │   └── users.sql
-│   └── schema/
-├── admin_middleware.go
-├── auth_middleware.go
-├── create_endpoint_test.go
-├── handler_admin_dead_letter_get.go
-├── handler_admin_dead_letter_replay.go
-├── handler_admin_deliveries_get.go
-├── handler_admin_endpoints_get.go
-├── handler_admin_events_get.go
-├── handler_admin_recent_activity.go
-├── handler_admin_stats_get.go
-├── handler_admin_user_delete.go
-├── handler_admin_users_get.go
-├── handler_deliveries_get.go
-├── handler_endpoint_create.go
-├── handler_endpointByID_delete.go
-├── handler_endpointByID_get.go
-├── handler_endpoints_delete.go
-├── handler_endpoints_get.go
-├── handler_events_get.go
-├── handler_login.go
-├── handler_recent_activity.go
-├── handler_token_refresh.go
-├── handler_token_revoke.go
-├── handler_user_stats_get.go
-├── handler_users_create.go
-├── handler_webhook_receive.go
-├── json.go
-├── main.go
-├── readiness.go
-├── go.mod
-├── go.sum
-├── sqlc.yaml
-├── test_REST_client.http
-└── README.md
+internal/
+    auth/
+    database/
+    service/
+    static/
+
+sql/
+    schema/
+    queries/
+
+assets/
+
+main.go
+README.md
 ```
 
 ---
@@ -490,24 +445,21 @@ GET /admin/recent-activity
 
 Building this project helped me gain hands-on experience with:
 
+**Backend**
 - REST API design
-- Authentication and authorization
+- Authentication
 - Session management
-- JWTs and refresh tokens
-- PostgreSQL schema design
-- Database migrations
-- sqlc
-- Webhook delivery systems
-- Retry and backoff strategies
+
+**Reliability**
+- Retry strategies
 - Dead-letter queues
 - Background workers
-- Frontend/backend integration
-- Railway deployments
-- Production debugging
-- Background job processing
-- Failure recovery strategies
-- Dead-letter queue design
-- Operational monitoring dashboards
+
+**Infrastructure**
+- Railway
+- PostgreSQL
+- Goose
+- sqlc
 
 ---
 
