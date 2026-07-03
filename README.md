@@ -23,7 +23,8 @@ Try the deployed application:
 
 ### Demo Credentials
 
-If you'd like to explore the application without creating an account, use one of the demo users:
+Use the demo credentials below to explore the application safely.
+The admin dashboard displays registered user emails, so please avoid using a personal email address when testing.
 
 | Role | Email | Password |
 |------|-------|----------|
