@@ -427,8 +427,7 @@ async function deleteEndpoint(endpointID) {
     }, 3000);
 
     await loadEndpoints();
-    await loadEvents();
-    await loadDeliveries();
+    await loadUserRecentActivity();
   } catch (error) {
     message.textContent = error.message;
   }
@@ -463,8 +462,7 @@ async function sendTestWebhook(endpointID, endpointName, div) {
       statusMessage.remove();
     }, 3000);
 
-    await loadEvents();
-    await loadDeliveries();
+    await loadUserRecentActivity();
   } catch (error) {
     message.textContent = error.message;
   }
