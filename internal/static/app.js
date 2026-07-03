@@ -152,13 +152,16 @@ const deadLetterCount = document.getElementById("dead-letter-count");
 const retryScheduledDeliveryCount = document.getElementById("retry-scheduled-count");
 const userRecentActivityList = document.getElementById("user-recent-activity-list");
 
-if (endpointList) {
+const page = document.body?.dataset?.page || "";
+
+if (page === "user-dashboard") {
   if (!getAccessToken()) {
     redirectToLogin();
+  } else {
+    loadEndpoints();
+    loadUserStats();
+    loadUserRecentActivity();
   }
-
-  loadEndpoints();
-  loadUserRecentActivity();
 }
 
 if (logoutButton) {
@@ -176,6 +179,21 @@ if (logoutButton) {
       redirectToLogin();
     }
   });
+}
+
+async function loadUserStats() {
+  const response = await authFetch("/api/stats");
+
+  if (!response.ok) {
+    throw new Error("Failed to load user stats");
+  }
+
+  const stats = await response.json();
+
+  eventCount.textContent = stats.events_received;
+  successfulDeliveryCount.textContent = stats.successful_delivery_count;
+  deadLetterCount.textContent = stats.failed_delivery_count;
+  retryScheduledDeliveryCount.textContent = stats.retry_scheduled_delivery_count;
 }
 
 let selectedEndpoint = null;
@@ -427,6 +445,7 @@ async function deleteEndpoint(endpointID) {
     }, 3000);
 
     await loadEndpoints();
+    await loadUserStats();
     await loadUserRecentActivity();
   } catch (error) {
     message.textContent = error.message;
@@ -463,6 +482,7 @@ async function sendTestWebhook(endpointID, endpointName, div) {
     }, 3000);
 
     await loadUserRecentActivity();
+    await loadUserStats();
   } catch (error) {
     message.textContent = error.message;
   }
@@ -548,11 +568,15 @@ deliveryDetailModal?.addEventListener("click", (event) => {
   }
 });
 
-if (userList) {
-  loadAdminUsers();
-  loadAdminStats();
-  loadAdminEndpoints();
-  loadAdminRecentActivity();
+if (page === "admin-dashboard") {
+  if (!getAccessToken()) {
+    redirectToLogin();
+  } else {
+    loadAdminUsers();
+    loadAdminStats();
+    loadAdminEndpoints();
+    loadAdminRecentActivity();
+  }
 }
 
 function timeAgo(dateString) {

@@ -69,6 +69,8 @@ func main() {
 		cfg.authMiddleware(http.HandlerFunc(cfg.handlerCreateEndpoint)))
 	mux.Handle("GET /api/recent-activity",
 		cfg.authMiddleware(http.HandlerFunc(cfg.handlerGetUserRecentActivity)))
+	mux.Handle("GET /api/stats",
+		cfg.authMiddleware(http.HandlerFunc(cfg.handlerGetUserStats)))
 	mux.Handle("DELETE /api/endpoints/{id}",
 		cfg.authMiddleware(http.HandlerFunc(cfg.handlerDeleteEndpointByID)))
 	mux.HandleFunc("POST /webhooks/{id}", cfg.handlerReceiveWebhook)
