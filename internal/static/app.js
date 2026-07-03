@@ -149,7 +149,8 @@ const userCount = document.getElementById("user-count");
 const eventCount = document.getElementById("event-count");
 const successfulDeliveryCount = document.getElementById("successful-delivery-count");
 const deadLetterCount = document.getElementById("dead-letter-count");
-const retryScheduledDeliveryCount = document.getElementById("retry-scheduled-count")
+const retryScheduledDeliveryCount = document.getElementById("retry-scheduled-count");
+const userRecentActivityList = document.getElementById("user-recent-activity-list");
 
 if (endpointList) {
   if (!getAccessToken()) {
@@ -157,8 +158,7 @@ if (endpointList) {
   }
 
   loadEndpoints();
-  loadEvents();
-  loadDeliveries();
+  loadUserRecentActivity();
 }
 
 if (logoutButton) {
@@ -427,8 +427,7 @@ async function deleteEndpoint(endpointID) {
     }, 3000);
 
     await loadEndpoints();
-    await loadEvents();
-    await loadDeliveries();
+    await loadUserRecentActivity();
   } catch (error) {
     message.textContent = error.message;
   }
@@ -475,8 +474,7 @@ async function sendTestWebhook(endpointID, endpointName, div) {
       statusMessage.remove();
     }, 3000);
 
-    await loadEvents();
-    await loadDeliveries();
+    await loadUserRecentActivity();
   } catch (error) {
     message.textContent = error.message;
   }
@@ -493,92 +491,51 @@ function createInfoRow(label, value) {
   return row;
 }
 
-async function loadEvents() {
+async function loadUserRecentActivity() {
   try {
-    const response = await authFetch("/api/events");
-
+    const response = await authFetch("/api/recent-activity");
     if (!response.ok) {
-      throw new Error("Failed to load events");
+      throw new Error("failed to load recent activity");
     }
 
-    const events = await response.json();
-    eventCount.textContent = events.length;
-    eventList.textContent = "";
+    const activities = await response.json();
+    userRecentActivityList.replaceChildren();
 
-    if (events.length === 0) {
-      eventList.textContent = "No events yet.";
-      return;
-    }
+    for (const activity of activities) {
+      const row = document.createElement("tr");
+      const time = document.createElement("td");
+      time.textContent = timeAgo(activity.received_at);
 
-    for (const event of events) {
-      const card = document.createElement("div");
-      card.className = "endpoint";
+      const endpoint = document.createElement("td");
+      endpoint.textContent = activity.endpoint_name;
 
-      const title = document.createElement("h4");
-      title.textContent = event.endpoint_name;
+      const eventType = document.createElement("td");
+      eventType.textContent = activity.event_type;
 
-      card.append(
-        title,
-        createInfoRow("Event Type", event.event_type),
-        createInfoRow("Received", new Date(event.received_at).toLocaleString()),
+      const attempts = document.createElement("td");
+      attempts.textContent = `${activity.attempt_count}/5`;
+
+      const status = document.createElement("td");
+      const badge = document.createElement("span");
+      badge.textContent = activity.latest_delivery_status;
+      badge.className = `status-badge status-${activity.latest_delivery_status}`;
+      status.appendChild(badge);
+
+      const code = document.createElement("td");
+      code.textContent = activity.latest_delivery_status_code;
+
+      row.append(
+        time,
+        endpoint,
+        eventType,
+        attempts,
+        status,
+        code,
       );
-
-      eventList.appendChild(card);
+      userRecentActivityList.appendChild(row);
     }
   } catch (error) {
-    eventList.textContent = "Failed to load events.";
-    message.textContent = error.message;
-  }
-}
-
-async function loadDeliveries() {
-  deliveryList.textContent = "Loading...";
-
-  try {
-    const response = await authFetch("/api/deliveries");
-
-    if (!response.ok) {
-      throw new Error("Failed to load deliveries");
-    }
-
-    const deliveries = await response.json();
-    deliveryList.textContent = "";
-
-    successfulDeliveryCount.textContent =
-    deliveries.filter((delivery) => delivery.status === "success").length;
-
-    retryScheduledDeliveryCount.textContent =
-    deliveries.filter((delivery) => delivery.status === "retry_scheduled").length;
-
-    deadLetterCount.textContent =
-    deliveries.filter((delivery) => delivery.status === "dead_letter").length;
-
-    if (deliveries.length === 0) {
-      deliveryList.textContent = "No deliveries yet.";
-      return;
-    }
-
-    for (const delivery of deliveries) {
-      const card = document.createElement("div");
-      card.className = "endpoint";
-
-      const title = document.createElement("h4");
-      title.textContent = delivery.endpoint_name;
-
-      card.append(
-        title,
-        createInfoRow("Status", delivery.status),
-        createInfoRow("Status Code", String(delivery.status_code ?? "---")),
-        createInfoRow("Target", delivery.target_url),
-        createInfoRow("Duration", `${delivery.delivery_duration_ms ?? "---"} ms`),
-        createInfoRow("Created", new Date(delivery.created_at).toLocaleString()),
-      );
-
-      deliveryList.appendChild(card);
-    }
-  } catch (error) {
-    deliveryList.textContent = "Failed to load deliveries.";
-    message.textContent = error.message;
+    console.error(error);
   }
 }
 
@@ -656,7 +613,7 @@ async function loadAdminRecentActivity() {
       eventType.textContent = activity.event_type;
 
       const attempts = document.createElement("td");
-      attempts.textContent = `${activity.attempt_count+"/5"}`;
+      attempts.textContent = `${activity.attempt_count}/5`;
 
       const status = document.createElement("td");
       const badge = document.createElement("span");

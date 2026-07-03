@@ -78,6 +78,83 @@ func (q *Queries) GetAdminDeliveryDetails(ctx context.Context, id uuid.UUID) (Ge
 	return i, err
 }
 
+const getAdminRecentActivity = `-- name: GetAdminRecentActivity :many
+SELECT
+  e.id AS event_id,
+  e.received_at,
+  ep.name AS endpoint_name,
+  u.name AS user_name,
+  e.event_type,
+  COALESCE(d.status, 'pending') AS latest_delivery_status,
+  d.status_code AS latest_delivery_status_code,
+  COALESCE(d.attempt_count, 0) AS attempt_count,
+  d.id AS delivery_id
+FROM webhook_events e
+JOIN webhook_endpoints ep
+  ON ep.id = e.endpoint_id
+JOIN users u
+  ON u.id = ep.user_id
+LEFT JOIN LATERAL (
+  SELECT
+    status,
+    status_code,
+    created_at,
+    attempt_count,
+    id
+  FROM deliveries
+  WHERE deliveries.event_id = e.id
+  ORDER BY created_at DESC
+  LIMIT 1
+) d ON true
+ORDER BY e.received_at DESC
+LIMIT 10
+`
+
+type GetAdminRecentActivityRow struct {
+	EventID                  uuid.UUID
+	ReceivedAt               time.Time
+	EndpointName             string
+	UserName                 string
+	EventType                sql.NullString
+	LatestDeliveryStatus     string
+	LatestDeliveryStatusCode sql.NullInt32
+	AttemptCount             int32
+	DeliveryID               uuid.UUID
+}
+
+func (q *Queries) GetAdminRecentActivity(ctx context.Context) ([]GetAdminRecentActivityRow, error) {
+	rows, err := q.db.QueryContext(ctx, getAdminRecentActivity)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAdminRecentActivityRow
+	for rows.Next() {
+		var i GetAdminRecentActivityRow
+		if err := rows.Scan(
+			&i.EventID,
+			&i.ReceivedAt,
+			&i.EndpointName,
+			&i.UserName,
+			&i.EventType,
+			&i.LatestDeliveryStatus,
+			&i.LatestDeliveryStatusCode,
+			&i.AttemptCount,
+			&i.DeliveryID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAdminStats = `-- name: GetAdminStats :one
 SELECT
   (SELECT COUNT(*) FROM users) AS users,
@@ -300,83 +377,6 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]GetAllUsersRow, error) {
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.IsAdmin,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getRecentActivity = `-- name: GetRecentActivity :many
-SELECT
-  e.id AS event_id,
-  e.received_at,
-  ep.name AS endpoint_name,
-  u.name AS user_name,
-  e.event_type,
-  COALESCE(d.status, 'pending') AS latest_delivery_status,
-  d.status_code AS latest_delivery_status_code,
-  COALESCE(d.attempt_count, 0) AS attempt_count,
-  d.id AS delivery_id
-FROM webhook_events e
-JOIN webhook_endpoints ep
-  ON ep.id = e.endpoint_id
-JOIN users u
-  ON u.id = ep.user_id
-LEFT JOIN LATERAL (
-  SELECT
-    status,
-    status_code,
-    created_at,
-    attempt_count,
-    id
-  FROM deliveries
-  WHERE deliveries.event_id = e.id
-  ORDER BY created_at DESC
-  LIMIT 1
-) d ON true
-ORDER BY e.received_at DESC
-LIMIT 10
-`
-
-type GetRecentActivityRow struct {
-	EventID                  uuid.UUID
-	ReceivedAt               time.Time
-	EndpointName             string
-	UserName                 string
-	EventType                sql.NullString
-	LatestDeliveryStatus     string
-	LatestDeliveryStatusCode sql.NullInt32
-	AttemptCount             int32
-	DeliveryID               uuid.UUID
-}
-
-func (q *Queries) GetRecentActivity(ctx context.Context) ([]GetRecentActivityRow, error) {
-	rows, err := q.db.QueryContext(ctx, getRecentActivity)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetRecentActivityRow
-	for rows.Next() {
-		var i GetRecentActivityRow
-		if err := rows.Scan(
-			&i.EventID,
-			&i.ReceivedAt,
-			&i.EndpointName,
-			&i.UserName,
-			&i.EventType,
-			&i.LatestDeliveryStatus,
-			&i.LatestDeliveryStatusCode,
-			&i.AttemptCount,
-			&i.DeliveryID,
 		); err != nil {
 			return nil, err
 		}

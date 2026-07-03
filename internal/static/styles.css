@@ -449,26 +449,26 @@ button:hover {
 
 /*Admin table */
 
-.admin-table {
+.activity-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.admin-table th,
-.admin-table td {
+.activity-table th,
+.activity-table td {
   padding: 0.75rem 1rem;
   text-align: center;
 }
 
-.admin-table thead {
+.activity-table thead {
   border-bottom: 2px solid #d1d5db;
 }
 
-.admin-table tbody tr {
+.activity-table tbody tr {
   border-bottom: 1px solid #e5e7eb;
 }
 
-.admin-table tbody tr:hover {
+.activity-table tbody tr:hover {
   background: #f8fafc;
 }
 

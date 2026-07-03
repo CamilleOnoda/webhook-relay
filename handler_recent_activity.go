@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (cfg *apiConfig) handlerGetRecentActivity(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) handlerGetUserRecentActivity(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodGet {
 		respondWithError(w, http.StatusMethodNotAllowed,
@@ -20,14 +20,24 @@ func (cfg *apiConfig) handlerGetRecentActivity(w http.ResponseWriter, r *http.Re
 		DeliveryID               uuid.UUID `json:"delivery_id"`
 		ReceivedAt               time.Time `json:"received_at"`
 		EndpointName             string    `json:"endpoint_name"`
-		UserName                 string    `json:"user_name"`
 		EventType                *string   `json:"event_type"`
 		LatestDeliveryStatus     string    `json:"latest_delivery_status"`
 		LatestDeliveryStatusCode *int32    `json:"latest_delivery_status_code"`
 		AttemptCount             int32     `json:"attempt_count"`
 	}
 
-	activities, err := cfg.db.GetAdminRecentActivity(r.Context())
+	userIDFromToken, ok := r.Context().Value("userID").(uuid.UUID)
+	if !ok {
+		respondWithError(w, http.StatusUnauthorized,
+			"Invalid user ID in token", nil)
+		return
+	}
+	userID := uuid.NullUUID{
+		UUID:  userIDFromToken,
+		Valid: true,
+	}
+
+	activities, err := cfg.db.GetUserRecentActvity(r.Context(), userID)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError,
 			"failed to get recent activity", err)
@@ -49,7 +59,6 @@ func (cfg *apiConfig) handlerGetRecentActivity(w http.ResponseWriter, r *http.Re
 			DeliveryID:               recentAct.DeliveryID,
 			ReceivedAt:               recentAct.ReceivedAt,
 			EndpointName:             recentAct.EndpointName,
-			UserName:                 recentAct.UserName,
 			EventType:                eventType,
 			AttemptCount:             recentAct.AttemptCount,
 			LatestDeliveryStatus:     recentAct.LatestDeliveryStatus,

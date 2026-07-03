@@ -16,7 +16,7 @@ SELECT
   is_admin 
 FROM users;
 
--- name: GetRecentActivity :many
+-- name: GetAdminRecentActivity :many
 SELECT
   e.id AS event_id,
   e.received_at,
