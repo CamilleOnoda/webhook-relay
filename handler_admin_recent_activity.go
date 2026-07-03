@@ -7,18 +7,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type recentActivity struct {
-	EventID                  uuid.UUID `json:"event_id"`
-	DeliveryID               uuid.UUID `json:"delivery_id"`
-	ReceivedAt               time.Time `json:"received_at"`
-	EndpointName             string    `json:"endpoint_name"`
-	UserName                 string    `json:"user_name"`
-	EventType                *string   `json:"event_type"`
-	LatestDeliveryStatus     string    `json:"latest_delivery_status"`
-	LatestDeliveryStatusCode *int32    `json:"latest_delivery_status_code"`
-	AttemptCount             int32     `json:"attempt_count"`
-}
-
 func (cfg *apiConfig) handlerGetRecentActivity(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodGet {
@@ -27,7 +15,19 @@ func (cfg *apiConfig) handlerGetRecentActivity(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	activities, err := cfg.db.GetRecentActivity(r.Context())
+	type recentActivity struct {
+		EventID                  uuid.UUID `json:"event_id"`
+		DeliveryID               uuid.UUID `json:"delivery_id"`
+		ReceivedAt               time.Time `json:"received_at"`
+		EndpointName             string    `json:"endpoint_name"`
+		UserName                 string    `json:"user_name"`
+		EventType                *string   `json:"event_type"`
+		LatestDeliveryStatus     string    `json:"latest_delivery_status"`
+		LatestDeliveryStatusCode *int32    `json:"latest_delivery_status_code"`
+		AttemptCount             int32     `json:"attempt_count"`
+	}
+
+	activities, err := cfg.db.GetAdminRecentActivity(r.Context())
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError,
 			"failed to get recent activity", err)
