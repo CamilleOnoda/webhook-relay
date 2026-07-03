@@ -152,13 +152,16 @@ const deadLetterCount = document.getElementById("dead-letter-count");
 const retryScheduledDeliveryCount = document.getElementById("retry-scheduled-count");
 const userRecentActivityList = document.getElementById("user-recent-activity-list");
 
-if (endpointList) {
+const page = document.body?.dataset?.page || "";
+
+if (page === "user-dashboard") {
   if (!getAccessToken()) {
     redirectToLogin();
+  } else {
+    loadEndpoints();
+    loadUserStats();
+    loadUserRecentActivity();
   }
-
-  loadEndpoints();
-  loadUserRecentActivity();
 }
 
 if (logoutButton) {
@@ -176,6 +179,21 @@ if (logoutButton) {
       redirectToLogin();
     }
   });
+}
+
+async function loadUserStats() {
+  const response = await authFetch("/api/stats");
+
+  if (!response.ok) {
+    throw new Error("Failed to load user stats");
+  }
+
+  const stats = await response.json();
+
+  eventCount.textContent = stats.events_received;
+  successfulDeliveryCount.textContent = stats.successful_delivery_count;
+  deadLetterCount.textContent = stats.failed_delivery_count;
+  retryScheduledDeliveryCount.textContent = stats.retry_scheduled_delivery_count;
 }
 
 let selectedEndpoint = null;
@@ -427,6 +445,7 @@ async function deleteEndpoint(endpointID) {
     }, 3000);
 
     await loadEndpoints();
+    await loadUserStats();
     await loadUserRecentActivity();
   } catch (error) {
     message.textContent = error.message;
@@ -475,6 +494,7 @@ async function sendTestWebhook(endpointID, endpointName, div) {
     }, 3000);
 
     await loadUserRecentActivity();
+    await loadUserStats();
   } catch (error) {
     message.textContent = error.message;
   }
@@ -560,11 +580,15 @@ deliveryDetailModal?.addEventListener("click", (event) => {
   }
 });
 
-if (userList) {
-  loadAdminUsers();
-  loadAdminStats();
-  loadAdminEndpoints();
-  loadAdminRecentActivity();
+if (page === "admin-dashboard") {
+  if (!getAccessToken()) {
+    redirectToLogin();
+  } else {
+    loadAdminUsers();
+    loadAdminStats();
+    loadAdminEndpoints();
+    loadAdminRecentActivity();
+  }
 }
 
 function timeAgo(dateString) {
@@ -588,6 +612,15 @@ function timeAgo(dateString) {
   return `${days} day${days > 1 ? "s" : ""} ago`;
 }
 
+function formatDeliveryStatus(status) {
+  const labels = {
+    success: "Delivered",
+    retry_scheduled: "Retrying",
+    dead_letter: "Failed",
+  };
+  return labels[status] || status;
+}
+
 async function loadAdminRecentActivity() {
   try {
     const response = await authFetch("/admin/recent-activity")
@@ -609,20 +642,14 @@ async function loadAdminRecentActivity() {
       const user = document.createElement("td");
       user.textContent = activity.user_name;
 
-      const eventType = document.createElement("td");
-      eventType.textContent = activity.event_type;
-
       const attempts = document.createElement("td");
       attempts.textContent = `${activity.attempt_count}/5`;
 
       const status = document.createElement("td");
       const badge = document.createElement("span");
-      badge.textContent = activity.latest_delivery_status;
+      badge.textContent = formatDeliveryStatus(activity.latest_delivery_status);
       badge.className = `status-badge status-${activity.latest_delivery_status}`;
       status.appendChild(badge);
-
-      const code = document.createElement("td");
-      code.textContent = activity.latest_delivery_status_code;
 
       const actions = document.createElement("td");
       actions.className = "activity-actions";
@@ -632,10 +659,8 @@ async function loadAdminRecentActivity() {
         time,
         endpoint,
         user,
-        eventType,
         attempts,
         status,
-        code,
         actions,
       );
       adminRecentActivityList.appendChild(row);

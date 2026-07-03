@@ -144,6 +144,40 @@ func (q *Queries) GetUserRecentActvity(ctx context.Context, userID uuid.NullUUID
 	return items, nil
 }
 
+const getUserStatsByID = `-- name: GetUserStatsByID :one
+SELECT
+    COUNT(DISTINCT ep.id) AS endpoint_count,
+    COUNT(DISTINCT e.id) AS event_count,
+    COUNT(DISTINCT CASE WHEN d.status = 'success' THEN d.id END) AS successful_delivery_count,
+    COUNT(DISTINCT CASE WHEN d.status = 'dead_letter' THEN d.id END) AS failed_delivery_count,
+    COUNT(DISTINCT CASE WHEN d.status = 'retry_scheduled' THEN d.id END) AS retry_scheduled_delivery_count
+FROM webhook_endpoints ep
+LEFT JOIN webhook_events e ON ep.id = e.endpoint_id
+LEFT JOIN deliveries d ON e.id = d.event_id
+WHERE ep.user_id = $1
+`
+
+type GetUserStatsByIDRow struct {
+	EndpointCount               int64
+	EventCount                  int64
+	SuccessfulDeliveryCount     int64
+	FailedDeliveryCount         int64
+	RetryScheduledDeliveryCount int64
+}
+
+func (q *Queries) GetUserStatsByID(ctx context.Context, userID uuid.NullUUID) (GetUserStatsByIDRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserStatsByID, userID)
+	var i GetUserStatsByIDRow
+	err := row.Scan(
+		&i.EndpointCount,
+		&i.EventCount,
+		&i.SuccessfulDeliveryCount,
+		&i.FailedDeliveryCount,
+		&i.RetryScheduledDeliveryCount,
+	)
+	return i, err
+}
+
 const isUserAdmin = `-- name: IsUserAdmin :one
 SELECT is_admin FROM users WHERE id = $1
 `

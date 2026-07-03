@@ -7,8 +7,9 @@
   <link rel="stylesheet" href="/styles.css" />
 </head>
 
-<body>
+<body data-page="admin-dashboard">
   <main class="dashboard">
+    <div class="dashboard-content">
     <header class="dashboard-header">
       <div>
         <p class="eyebrow">Admin dashboard</p>
@@ -27,27 +28,27 @@
       </article>
 
       <article class="stat-card">
-        <span class="stat-label">Events Received</span>
+        <span class="stat-label">Events</span>
         <strong id="event-count">0</strong>
       </article>
 
       <article class="stat-card">
-        <span class="stat-label">Successful Deliveries</span>
+        <span class="stat-label">Delivered</span>
         <strong id="successful-delivery-count">0</strong>
       </article>
       <article class="stat-card">
-        <span class="stat-label">Retry Scheduled Deliveries</span>
+        <span class="stat-label">Retrying</span>
         <strong id="retry-scheduled-count">0</strong>
       </article>
       <article class="stat-card">
-        <span class="stat-label">Dead Letter</span>
+        <span class="stat-label">Failed</span>
         <strong id="dead-letter-count">0</strong>
       </article>
     </section>
 
     <p id="message" class="message"></p>
 
-      <article class="card">
+  <section class="card activity-card"> 
         <div class="section-heading">
           <h2>Recent activity</h2>
           <p>Latest events and delivery attempts.</p>
@@ -59,10 +60,8 @@
               <th>Time</th>
               <th>Endpoint</th>
               <th>User</th>
-              <th>Event Type</th>
               <th>Attempts</th>
               <th>Latest Status</th>
-              <th>Code</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -73,7 +72,8 @@
             </tr>
           </tbody>
         </table>
-      </article>
+    </section> 
+
     <section class="admin-bottom">
       <article class="card">
         <div class="section-heading">
@@ -110,6 +110,7 @@
       </table>
     </section>
     </section>
+  </div>
 
     <div id="delivery-detail-modal" class="modal hidden">
       <div class="modal-card">

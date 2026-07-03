@@ -43,3 +43,15 @@ LEFT JOIN LATERAL (
 WHERE ep.user_id = $1
 ORDER BY e.received_at DESC
 LIMIT 10;
+
+-- name: GetUserStatsByID :one
+SELECT
+    COUNT(DISTINCT ep.id) AS endpoint_count,
+    COUNT(DISTINCT e.id) AS event_count,
+    COUNT(DISTINCT CASE WHEN d.status = 'success' THEN d.id END) AS successful_delivery_count,
+    COUNT(DISTINCT CASE WHEN d.status = 'dead_letter' THEN d.id END) AS failed_delivery_count,
+    COUNT(DISTINCT CASE WHEN d.status = 'retry_scheduled' THEN d.id END) AS retry_scheduled_delivery_count
+FROM webhook_endpoints ep
+LEFT JOIN webhook_events e ON ep.id = e.endpoint_id
+LEFT JOIN deliveries d ON e.id = d.event_id
+WHERE ep.user_id = $1;
