@@ -72,15 +72,23 @@ This project became an opportunity to combine several backend concepts into a si
 
 <table>
   <tr>
-    <td align="center">
+    <td align="center" width="33%">
       <strong>User Dashboard</strong><br>
       Manage webhook endpoints, monitor delivery metrics, and inspect recent activity.
+      <br><br>
       <img src="assets/user-dashboard.png" width="400">
     </td>
-    <td align="center">
+    <td align="center" width="33%">
       <strong>Admin Dashboard</strong><br>
-      Monitor users, endpoints, delivery outcomes, retry queues, and dead-letter events across the system.
-      <img src="assets/admin-dashboard.png" width="500">
+      Monitor users, endpoints, delivery outcomes, retry queues, and failed deliveries.
+      <br><br>
+      <img src="assets/admin-dashboard.png" width="400">
+    </td>
+    <td align="center" width="33%">
+      <strong>Management Tables</strong><br>
+      View registered users and webhook endpoints from the admin dashboard.
+      <br><br>
+      <img src="assets/endpoints-users.png" width="400">
     </td>
   </tr>
 </table>
