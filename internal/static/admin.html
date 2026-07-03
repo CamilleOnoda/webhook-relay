@@ -9,6 +9,7 @@
 
 <body data-page="admin-dashboard">
   <main class="dashboard">
+    <div class="dashboard-content">
     <header class="dashboard-header">
       <div>
         <p class="eyebrow">Webhook relay | Admin dashboard - staging</p>
@@ -47,7 +48,7 @@
 
     <p id="message" class="message"></p>
 
-      <article class="card">
+  <section class="card activity-card"> 
         <div class="section-heading">
           <h2>Recent activity</h2>
           <p>Latest events and delivery attempts.</p>
@@ -71,7 +72,8 @@
             </tr>
           </tbody>
         </table>
-      </article>
+    </section> 
+
     <section class="admin-bottom">
       <article class="card">
         <div class="section-heading">
@@ -108,6 +110,7 @@
       </table>
     </section>
     </section>
+  </div>
 
     <div id="delivery-detail-modal" class="modal hidden">
       <div class="modal-card">
