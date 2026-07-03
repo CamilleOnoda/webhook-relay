@@ -329,8 +329,10 @@ This allows sessions to remain active without repeatedly prompting users to log 
 ├── handler_endpoints_get.go
 ├── handler_events_get.go
 ├── handler_login.go
+├── handler_recent_activity.go
 ├── handler_token_refresh.go
 ├── handler_token_revoke.go
+├── handler_user_stats_get.go
 ├── handler_users_create.go
 ├── handler_webhook_receive.go
 ├── json.go
