@@ -600,6 +600,15 @@ function timeAgo(dateString) {
   return `${days} day${days > 1 ? "s" : ""} ago`;
 }
 
+function formatDeliveryStatus(status) {
+  const labels = {
+    success: "Delivered",
+    retry_scheduled: "Retrying",
+    dead_letter: "Failed",
+  };
+  return labels[status] || status;
+}
+
 async function loadAdminRecentActivity() {
   try {
     const response = await authFetch("/admin/recent-activity")
@@ -621,20 +630,14 @@ async function loadAdminRecentActivity() {
       const user = document.createElement("td");
       user.textContent = activity.user_name;
 
-      const eventType = document.createElement("td");
-      eventType.textContent = activity.event_type;
-
       const attempts = document.createElement("td");
       attempts.textContent = `${activity.attempt_count}/5`;
 
       const status = document.createElement("td");
       const badge = document.createElement("span");
-      badge.textContent = activity.latest_delivery_status;
+      badge.textContent = formatDeliveryStatus(activity.latest_delivery_status);
       badge.className = `status-badge status-${activity.latest_delivery_status}`;
       status.appendChild(badge);
-
-      const code = document.createElement("td");
-      code.textContent = activity.latest_delivery_status_code;
 
       const actions = document.createElement("td");
       actions.className = "activity-actions";
@@ -644,10 +647,8 @@ async function loadAdminRecentActivity() {
         time,
         endpoint,
         user,
-        eventType,
         attempts,
         status,
-        code,
         actions,
       );
       adminRecentActivityList.appendChild(row);
