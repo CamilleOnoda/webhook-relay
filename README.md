@@ -200,33 +200,38 @@ When a webhook is received:
 
 This design allows delivery processing to continue independently of incoming requests and provides a foundation for future queue-based processing.
 
-<p align="center">
-  <img src="assets/webhook-architecture.png" width="500">
-</p>
+```mermaid
+flowchart TD
+    Client[Client Application]
+    API[Webhook Relay API]
+    DB[(PostgreSQL)]
+    Worker[Background Delivery Worker]
+    Target[Destination Endpoint]
+
+    Client -->|POST /webhooks/:id| API
+
+    API -->|Persist Event| DB
+
+    Worker -->|Fetch Pending Deliveries| DB
+    Worker -->|Deliver Webhook| Target
+    Worker -->|Record Success / Failure| DB
+```
 
 ## Delivery Lifecycle
-```text
-Webhook Received
-        │
-        ▼
-     Pending
-        │
- ┌──────┴────────┐
- │               │
- ▼               ▼
-Success     Retry Scheduled
-                 │
-                 ▼
-         Exponential Backoff
-                 │
-                 ▼
-      Max Retries Reached
-                 │
-                 ▼
-          Dead-letter Queue
-                 │
-                 ▼
-          Admin Replay
+```mermaid
+flowchart TD
+    A[Webhook Received] --> B[Pending Delivery]
+
+    B -->|Success| C[Delivered]
+
+    B -->|Failure| D[Retry Scheduled]
+    D --> E[Exponential Backoff]
+    E --> F{Retries Left?}
+
+    F -->|Yes| B
+    F -->|No| G[Dead-letter Queue]
+
+    G -->|Admin Replay| B
 ```
 
 ## Session Flow
