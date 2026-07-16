@@ -17,22 +17,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-type apiConfig struct {
-	db          *database.Queries
-	environment string
-	baseURL     string
-	authConfig  *auth.Config
-}
-
-func (cfg *apiConfig) handlerConfig() *handler.Config {
-	return &handler.Config{
-		DB:          cfg.db,
-		Environment: cfg.environment,
-		BaseURL:     cfg.baseURL,
-		AuthConfig:  cfg.authConfig,
-	}
-}
-
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -55,131 +39,131 @@ func main() {
 		log.Fatal(err)
 	}
 
-	cfg := &apiConfig{
-		db:          database.New(db),
-		environment: os.Getenv("ENV"),
-		baseURL:     os.Getenv("BASE_URL"),
-		authConfig:  authConfig,
+	cfg := &handler.Config{
+		DB:          database.New(db),
+		Environment: os.Getenv("ENV"),
+		BaseURL:     os.Getenv("BASE_URL"),
+		AuthConfig:  authConfig,
 	}
 
 	httpDelivery := service.NewDeliveryService()
-	processor := service.NewDatabaseDeliveryProcessor(cfg.db, httpDelivery, 5)
+	processor := service.NewDatabaseDeliveryProcessor(cfg.DB, httpDelivery, 5)
 	go processor.Start(ctx, 10*time.Second)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /admin/health", handlerReadiness)
 	mux.Handle("GET /api/endpoints",
-		middleware.Auth(string(cfg.authConfig.AccessTokenSecret),
+		middleware.Auth(string(cfg.AuthConfig.AccessTokenSecret),
 			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handler.HandleGetEndpoints(cfg.handlerConfig(), w, r)
+				handler.HandleGetEndpoints(cfg, w, r)
 			})))
 	mux.Handle("GET /api/endpoints/{id}",
-		middleware.Auth(string(cfg.authConfig.AccessTokenSecret),
+		middleware.Auth(string(cfg.AuthConfig.AccessTokenSecret),
 			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handler.HandleGetEndpointByID(cfg.handlerConfig(), w, r)
+				handler.HandleGetEndpointByID(cfg, w, r)
 			})))
 	mux.Handle("GET /api/events",
-		middleware.Auth(string(cfg.authConfig.AccessTokenSecret),
+		middleware.Auth(string(cfg.AuthConfig.AccessTokenSecret),
 			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handler.HandleListEventsByUser(cfg.handlerConfig(), w, r)
+				handler.HandleListEventsByUser(cfg, w, r)
 			})))
 	mux.Handle("GET /api/deliveries",
-		middleware.Auth(string(cfg.authConfig.AccessTokenSecret),
+		middleware.Auth(string(cfg.AuthConfig.AccessTokenSecret),
 			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handler.HandleListDeliveriesByUser(cfg.handlerConfig(), w, r)
+				handler.HandleListDeliveriesByUser(cfg, w, r)
 			})))
 	mux.Handle("POST /api/endpoints",
-		middleware.Auth(string(cfg.authConfig.AccessTokenSecret),
+		middleware.Auth(string(cfg.AuthConfig.AccessTokenSecret),
 			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handler.HandleCreateEndpoint(cfg.handlerConfig(), w, r)
+				handler.HandleCreateEndpoint(cfg, w, r)
 			})))
 	mux.Handle("GET /api/recent-activity",
-		middleware.Auth(string(cfg.authConfig.AccessTokenSecret),
+		middleware.Auth(string(cfg.AuthConfig.AccessTokenSecret),
 			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handler.HandleGetUserRecentActivity(cfg.handlerConfig(), w, r)
+				handler.HandleGetUserRecentActivity(cfg, w, r)
 			})))
 	mux.Handle("GET /api/stats",
-		middleware.Auth(string(cfg.authConfig.AccessTokenSecret),
+		middleware.Auth(string(cfg.AuthConfig.AccessTokenSecret),
 			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handler.HandleGetUserStats(cfg.handlerConfig(), w, r)
+				handler.HandleGetUserStats(cfg, w, r)
 			})))
 	mux.Handle("DELETE /api/endpoints/{id}",
-		middleware.Auth(string(cfg.authConfig.AccessTokenSecret),
+		middleware.Auth(string(cfg.AuthConfig.AccessTokenSecret),
 			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handler.HandleDeleteEndpointByID(cfg.handlerConfig(), w, r)
+				handler.HandleDeleteEndpointByID(cfg, w, r)
 			})))
 	mux.HandleFunc("POST /webhooks/{id}",
 		func(w http.ResponseWriter, r *http.Request) {
-			handler.HandleReceiveWebhook(cfg.handlerConfig(), w, r)
+			handler.HandleReceiveWebhook(cfg, w, r)
 		})
 	mux.HandleFunc("POST /api/users",
 		func(w http.ResponseWriter, r *http.Request) {
-			handler.HandleUsersCreate(cfg.handlerConfig(), w, r)
+			handler.HandleUsersCreate(cfg, w, r)
 		})
 	mux.HandleFunc("POST /api/login",
 		func(w http.ResponseWriter, r *http.Request) {
-			handler.HandleLogin(cfg.handlerConfig(), w, r)
+			handler.HandleLogin(cfg, w, r)
 		})
 	mux.HandleFunc("POST /api/refresh",
 		func(w http.ResponseWriter, r *http.Request) {
-			handler.HandleRefreshToken(cfg.handlerConfig(), w, r)
+			handler.HandleRefreshToken(cfg, w, r)
 		})
 	mux.HandleFunc("POST /api/revoke",
 		func(w http.ResponseWriter, r *http.Request) {
-			handler.HandleRevoke(cfg.handlerConfig(), w, r)
+			handler.HandleRevoke(cfg, w, r)
 		})
 
 	// admin endpoints //
 	mux.Handle("DELETE /admin/users/{id}",
-		middleware.Auth(string(cfg.authConfig.AccessTokenSecret),
+		middleware.Auth(string(cfg.AuthConfig.AccessTokenSecret),
 			middleware.Admin(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handler.HandleDeleteUserByID(cfg.handlerConfig(), w, r)
-			}), cfg.db)))
+				handler.HandleDeleteUserByID(cfg, w, r)
+			}), cfg.DB)))
 	mux.Handle("GET /admin/users",
-		middleware.Auth(string(cfg.authConfig.AccessTokenSecret),
+		middleware.Auth(string(cfg.AuthConfig.AccessTokenSecret),
 			middleware.Admin(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handler.HandleGetUsers(cfg.handlerConfig(), w, r)
-			}), cfg.db)))
+				handler.HandleGetUsers(cfg, w, r)
+			}), cfg.DB)))
 	mux.Handle("GET /admin/stats",
-		middleware.Auth(string(cfg.authConfig.AccessTokenSecret),
+		middleware.Auth(string(cfg.AuthConfig.AccessTokenSecret),
 			middleware.Admin(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handler.HandleGetAdminStats(cfg.handlerConfig(), w, r)
-			}), cfg.db)))
+				handler.HandleGetAdminStats(cfg, w, r)
+			}), cfg.DB)))
 	mux.Handle("GET /admin/endpoints",
-		middleware.Auth(string(cfg.authConfig.AccessTokenSecret),
+		middleware.Auth(string(cfg.AuthConfig.AccessTokenSecret),
 			middleware.Admin(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handler.HandleGetAllEndpoints(cfg.handlerConfig(), w, r)
-			}), cfg.db)))
+				handler.HandleGetAllEndpoints(cfg, w, r)
+			}), cfg.DB)))
 	mux.Handle("GET /admin/recent-activity",
-		middleware.Auth(string(cfg.authConfig.AccessTokenSecret),
+		middleware.Auth(string(cfg.AuthConfig.AccessTokenSecret),
 			middleware.Admin(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handler.HandleGetRecentActivity(cfg.handlerConfig(), w, r)
-			}), cfg.db)))
+				handler.HandleGetRecentActivity(cfg, w, r)
+			}), cfg.DB)))
 	mux.Handle("GET /admin/events",
-		middleware.Auth(string(cfg.authConfig.AccessTokenSecret),
+		middleware.Auth(string(cfg.AuthConfig.AccessTokenSecret),
 			middleware.Admin(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handler.HandleGetEvents(cfg.handlerConfig(), w, r)
-			}), cfg.db)))
+				handler.HandleGetEvents(cfg, w, r)
+			}), cfg.DB)))
 	mux.Handle("GET /admin/deliveries",
-		middleware.Auth(string(cfg.authConfig.AccessTokenSecret),
+		middleware.Auth(string(cfg.AuthConfig.AccessTokenSecret),
 			middleware.Admin(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handler.HandleGetDeliveries(cfg.handlerConfig(), w, r)
-			}), cfg.db)))
+				handler.HandleGetDeliveries(cfg, w, r)
+			}), cfg.DB)))
 	mux.Handle("POST /admin/dead-letter/{id}/replay",
-		middleware.Auth(string(cfg.authConfig.AccessTokenSecret),
+		middleware.Auth(string(cfg.AuthConfig.AccessTokenSecret),
 			middleware.Admin(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handler.HandleReplayDeadLetter(cfg.handlerConfig(), w, r)
-			}), cfg.db)))
+				handler.HandleReplayDeadLetter(cfg, w, r)
+			}), cfg.DB)))
 	mux.Handle("GET /admin/deliveries/dead-letter",
-		middleware.Auth(string(cfg.authConfig.AccessTokenSecret),
+		middleware.Auth(string(cfg.AuthConfig.AccessTokenSecret),
 			middleware.Admin(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handler.HandleGetDeadLetters(cfg.handlerConfig(), w, r)
-			}), cfg.db)))
+				handler.HandleGetDeadLetters(cfg, w, r)
+			}), cfg.DB)))
 	mux.Handle("GET /admin/deliveries/{id}",
-		middleware.Auth(string(cfg.authConfig.AccessTokenSecret),
+		middleware.Auth(string(cfg.AuthConfig.AccessTokenSecret),
 			middleware.Admin(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handler.HandleGetAdminDeliveryDetails(cfg.handlerConfig(), w, r)
-			}), cfg.db)))
+				handler.HandleGetAdminDeliveryDetails(cfg, w, r)
+			}), cfg.DB)))
 
 	fileServer := http.FileServer(http.Dir("./internal/static"))
 	mux.Handle("/", fileServer)
