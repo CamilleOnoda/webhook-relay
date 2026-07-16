@@ -9,7 +9,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/CamilleOnoda/webhook-relay.git/internal/auth"
 	"github.com/CamilleOnoda/webhook-relay.git/internal/database"
+	"github.com/CamilleOnoda/webhook-relay.git/internal/handler"
 	_ "github.com/lib/pq"
 	"github.com/pressly/goose/v3"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -99,12 +101,19 @@ func TestEndpointCreate(t *testing.T) {
 			req.Header.Set("Content-Type", "application/json")
 			rec := httptest.NewRecorder()
 			queries := database.New(db)
-			apiCfg := apiConfig{
-				db: queries,
+			authConfig, err := auth.NewConfig()
+			if err != nil {
+				t.Fatalf("failed to create auth config: %v", err)
+			}
+			handlerCfg := &handler.Config{
+				DB:         queries,
+				AuthConfig: authConfig,
 			}
 
 			mux := http.NewServeMux()
-			mux.HandleFunc("POST /api/endpoints", apiCfg.handlerCreateEndpoint)
+			mux.HandleFunc("POST /api/endpoints", func(w http.ResponseWriter, r *http.Request) {
+				handler.HandleCreateEndpoint(handlerCfg, w, r)
+			})
 			mux.ServeHTTP(rec, req)
 
 			if rec.Code != test.wantStatus {
