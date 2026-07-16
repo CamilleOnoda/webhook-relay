@@ -256,7 +256,7 @@ This allows sessions to remain active without repeatedly prompting users to log 
 <table>
   <tr>
     <td align="center">
-      <img src="assets/session-flow.png" width="500">
+      <img src="assets/session-flow.png" width="700">
     </td>
   </tr>
 </table>
