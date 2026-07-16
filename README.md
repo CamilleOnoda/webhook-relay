@@ -1,7 +1,7 @@
 # Webhook Relay Service
 
 <p align="center">
-  <img src="assets/system-overview.png" width="900">
+  <img src="assets/system-overview.png" width="600">
 </p>
 An automated post office for HTTP messages. The relay receives webhook events, stores them, delivers them asynchronously, automatically retries transient failures using exponential backoff, and exposes delivery status through user and admin dashboards. Built in Go to explore reliable event delivery, authentication, background workers, and backend system design.
 
