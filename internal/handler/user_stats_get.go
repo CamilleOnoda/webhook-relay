@@ -1,24 +1,25 @@
-package main
+package handler
 
 import (
+	response "github.com/CamilleOnoda/webhook-relay.git/internal/response"
 	"log"
 	"net/http"
 
 	"github.com/google/uuid"
 )
 
-func (cfg *apiConfig) handlerGetUserStats(w http.ResponseWriter, r *http.Request) {
+func HandleGetUserStats(cfg *Config, w http.ResponseWriter, r *http.Request) {
 	log.Println("handlerGetUserStats called")
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodGet {
-		respondWithError(w, http.StatusMethodNotAllowed,
+		response.RespondWithError(w, http.StatusMethodNotAllowed,
 			"Method not allowed", nil)
 		return
 	}
 
 	userIDFromToken, ok := r.Context().Value("userID").(uuid.UUID)
 	if !ok {
-		respondWithError(w, http.StatusUnauthorized,
+		response.RespondWithError(w, http.StatusUnauthorized,
 			"Invalid user ID in token", nil)
 		return
 	}
@@ -35,9 +36,9 @@ func (cfg *apiConfig) handlerGetUserStats(w http.ResponseWriter, r *http.Request
 		RetryScheduledDeliveries int64 `json:"retry_scheduled_delivery_count"`
 	}
 
-	userStats, err := cfg.db.GetUserStatsByID(r.Context(), userID)
+	userStats, err := cfg.DB.GetUserStatsByID(r.Context(), userID)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError,
+		response.RespondWithError(w, http.StatusInternalServerError,
 			"failed to get stats", err)
 		return
 	}
@@ -50,5 +51,5 @@ func (cfg *apiConfig) handlerGetUserStats(w http.ResponseWriter, r *http.Request
 		RetryScheduledDeliveries: userStats.RetryScheduledDeliveryCount,
 	}
 
-	respondWithJSON(w, http.StatusOK, responseStats)
+	response.RespondWithJSON(w, http.StatusOK, responseStats)
 }

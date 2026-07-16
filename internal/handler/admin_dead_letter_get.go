@@ -1,13 +1,14 @@
-package main
+package handler
 
 import (
+	response "github.com/CamilleOnoda/webhook-relay.git/internal/response"
 	"net/http"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-func (cfg *apiConfig) handlerGetDeadLetters(w http.ResponseWriter, r *http.Request) {
+func HandleGetDeadLetters(cfg *Config, w http.ResponseWriter, r *http.Request) {
 	type delivery struct {
 		ID                 uuid.UUID `json:"id"`
 		EndpointName       string    `json:"endpoint_name"`
@@ -23,14 +24,14 @@ func (cfg *apiConfig) handlerGetDeadLetters(w http.ResponseWriter, r *http.Reque
 
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodGet {
-		respondWithError(w, http.StatusMethodNotAllowed,
+		response.RespondWithError(w, http.StatusMethodNotAllowed,
 			"Method not allowed", nil)
 		return
 	}
 
-	deadLetters, err := cfg.db.ListDeadLetterDeliveries(r.Context())
+	deadLetters, err := cfg.DB.ListDeadLetterDeliveries(r.Context())
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError,
+		response.RespondWithError(w, http.StatusInternalServerError,
 			"Failed to list dead letter deliveries", err)
 		return
 	}
@@ -60,5 +61,5 @@ func (cfg *apiConfig) handlerGetDeadLetters(w http.ResponseWriter, r *http.Reque
 		})
 	}
 
-	respondWithJSON(w, http.StatusOK, responseDeadLetters)
+	response.RespondWithJSON(w, http.StatusOK, responseDeadLetters)
 }

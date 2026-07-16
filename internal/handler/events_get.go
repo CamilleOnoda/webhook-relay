@@ -1,6 +1,7 @@
-package main
+package handler
 
 import (
+	response "github.com/CamilleOnoda/webhook-relay.git/internal/response"
 	"net/http"
 	"time"
 
@@ -18,17 +19,18 @@ type Event struct {
 
 // List all webhook events for the authenticated user.
 // This is a read-only operation that does not modify any data.
-func (cfg *apiConfig) handlerListEventsByUser(w http.ResponseWriter, r *http.Request) {
+
+func HandleListEventsByUser(cfg *Config, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodGet {
-		respondWithError(w, http.StatusMethodNotAllowed,
+		response.RespondWithError(w, http.StatusMethodNotAllowed,
 			"Method not allowed", nil)
 		return
 	}
 
 	userIDFromToken, ok := r.Context().Value("userID").(uuid.UUID)
 	if !ok {
-		respondWithError(w, http.StatusUnauthorized,
+		response.RespondWithError(w, http.StatusUnauthorized,
 			"Invalid user ID in token", nil)
 		return
 	}
@@ -37,9 +39,9 @@ func (cfg *apiConfig) handlerListEventsByUser(w http.ResponseWriter, r *http.Req
 		Valid: true,
 	}
 
-	events, err := cfg.db.ListEventsByUser(r.Context(), userID)
+	events, err := cfg.DB.ListEventsByUser(r.Context(), userID)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError,
+		response.RespondWithError(w, http.StatusInternalServerError,
 			"Failed to list events", err)
 		return
 	}
@@ -61,5 +63,5 @@ func (cfg *apiConfig) handlerListEventsByUser(w http.ResponseWriter, r *http.Req
 		})
 	}
 
-	respondWithJSON(w, http.StatusOK, responseEvents)
+	response.RespondWithJSON(w, http.StatusOK, responseEvents)
 }

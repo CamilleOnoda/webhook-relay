@@ -1,6 +1,7 @@
-package main
+package handler
 
 import (
+	response "github.com/CamilleOnoda/webhook-relay.git/internal/response"
 	"net/http"
 	"time"
 
@@ -18,17 +19,17 @@ type Delivery struct {
 	UserName           string    `json:"user_name"`
 }
 
-func (cfg *apiConfig) handlerListDeliveriesByUser(w http.ResponseWriter, r *http.Request) {
+func HandleListDeliveriesByUser(cfg *Config, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodGet {
-		respondWithError(w, http.StatusMethodNotAllowed,
+		response.RespondWithError(w, http.StatusMethodNotAllowed,
 			"Method not allowed", nil)
 		return
 	}
 
 	userIDFromToken, ok := r.Context().Value("userID").(uuid.UUID)
 	if !ok {
-		respondWithError(w, http.StatusUnauthorized,
+		response.RespondWithError(w, http.StatusUnauthorized,
 			"Invalid user ID in token", nil)
 		return
 	}
@@ -37,9 +38,9 @@ func (cfg *apiConfig) handlerListDeliveriesByUser(w http.ResponseWriter, r *http
 		Valid: true,
 	}
 
-	deliveries, err := cfg.db.ListDeliveriesByUser(r.Context(), userID)
+	deliveries, err := cfg.DB.ListDeliveriesByUser(r.Context(), userID)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError,
+		response.RespondWithError(w, http.StatusInternalServerError,
 			"Failed to list deliveries", err)
 		return
 	}
@@ -68,5 +69,5 @@ func (cfg *apiConfig) handlerListDeliveriesByUser(w http.ResponseWriter, r *http
 		})
 	}
 
-	respondWithJSON(w, http.StatusOK, responseDeliveries)
+	response.RespondWithJSON(w, http.StatusOK, responseDeliveries)
 }

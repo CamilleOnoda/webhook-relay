@@ -1,20 +1,21 @@
-package main
+package handler
 
 import (
+	response "github.com/CamilleOnoda/webhook-relay.git/internal/response"
 	"net/http"
 )
 
-func (cfg *apiConfig) handlerGetUsers(w http.ResponseWriter, r *http.Request) {
+func HandleGetUsers(cfg *Config, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodGet {
-		respondWithError(w, http.StatusMethodNotAllowed,
+		response.RespondWithError(w, http.StatusMethodNotAllowed,
 			"Method not allowed", nil)
 		return
 	}
 
-	users, err := cfg.db.GetAllUsers(r.Context())
+	users, err := cfg.DB.GetAllUsers(r.Context())
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError,
+		response.RespondWithError(w, http.StatusInternalServerError,
 			"failed to list users", err)
 		return
 	}
@@ -30,5 +31,5 @@ func (cfg *apiConfig) handlerGetUsers(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	respondWithJSON(w, http.StatusOK, responseUsers)
+	response.RespondWithJSON(w, http.StatusOK, responseUsers)
 }

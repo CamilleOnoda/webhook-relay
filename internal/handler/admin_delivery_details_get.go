@@ -1,13 +1,14 @@
-package main
+package handler
 
 import (
+	response "github.com/CamilleOnoda/webhook-relay.git/internal/response"
 	"net/http"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-func (cfg *apiConfig) handlerGetAdminDeliveryDetails(w http.ResponseWriter, r *http.Request) {
+func HandleGetAdminDeliveryDetails(cfg *Config, w http.ResponseWriter, r *http.Request) {
 	type deliveryDetail struct {
 		ID           uuid.UUID  `json:"id"`
 		EndpointName string     `json:"endpoint_name"`
@@ -23,7 +24,7 @@ func (cfg *apiConfig) handlerGetAdminDeliveryDetails(w http.ResponseWriter, r *h
 	}
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodGet {
-		respondWithError(w, http.StatusMethodNotAllowed,
+		response.RespondWithError(w, http.StatusMethodNotAllowed,
 			"Method not allowed", nil)
 		return
 	}
@@ -31,14 +32,14 @@ func (cfg *apiConfig) handlerGetAdminDeliveryDetails(w http.ResponseWriter, r *h
 	ID := r.PathValue("id")
 	deliveryID, err := uuid.Parse(ID)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest,
+		response.RespondWithError(w, http.StatusBadRequest,
 			"Invalid uuid format", err)
 		return
 	}
 
-	dbDeliveryDetail, err := cfg.db.GetAdminDeliveryDetails(r.Context(), deliveryID)
+	dbDeliveryDetail, err := cfg.DB.GetAdminDeliveryDetails(r.Context(), deliveryID)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError,
+		response.RespondWithError(w, http.StatusInternalServerError,
 			"Failed to get admin details from database", err)
 		return
 	}
@@ -78,5 +79,5 @@ func (cfg *apiConfig) handlerGetAdminDeliveryDetails(w http.ResponseWriter, r *h
 		DeliveredAt:  deliveredAt,
 	}
 
-	respondWithJSON(w, http.StatusOK, responseDeliveryDetail)
+	response.RespondWithJSON(w, http.StatusOK, responseDeliveryDetail)
 }

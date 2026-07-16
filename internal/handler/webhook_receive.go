@@ -1,8 +1,9 @@
-package main
+package handler
 
 import (
 	"database/sql"
 	"encoding/json"
+	response "github.com/CamilleOnoda/webhook-relay.git/internal/response"
 	"io"
 	"net/http"
 
@@ -12,10 +13,11 @@ import (
 
 // Receive incoming webhooks for a specific endpoint and forward them to the target URL.
 // Endpoint: POST /webhooks/{id}
-func (cfg *apiConfig) handlerReceiveWebhook(w http.ResponseWriter, r *http.Request) {
+
+func HandleReceiveWebhook(cfg *Config, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 	if r.Method != http.MethodPost {
-		respondWithError(w, http.StatusMethodNotAllowed,
+		response.RespondWithError(w, http.StatusMethodNotAllowed,
 			"Method not allowed", nil)
 		return
 	}
@@ -23,14 +25,14 @@ func (cfg *apiConfig) handlerReceiveWebhook(w http.ResponseWriter, r *http.Reque
 	endpointID := r.PathValue("id")
 	id, err := uuid.Parse(endpointID)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest,
+		response.RespondWithError(w, http.StatusBadRequest,
 			"Invalid endpoint ID format", err)
 		return
 	}
 
-	endpoint, err := cfg.db.GetEndpointByID(r.Context(), id)
+	endpoint, err := cfg.DB.GetEndpointByID(r.Context(), id)
 	if err != nil {
-		respondWithError(w, http.StatusNotFound, "Endpoint not found", err)
+		response.RespondWithError(w, http.StatusNotFound, "Endpoint not found", err)
 		return
 	}
 
@@ -39,43 +41,43 @@ func (cfg *apiConfig) handlerReceiveWebhook(w http.ResponseWriter, r *http.Reque
 
 	eventPayload, err := io.ReadAll(rawStream)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest,
+		response.RespondWithError(w, http.StatusBadRequest,
 			"Failed to read request body", err)
 		return
 	}
 
 	marshaledHeaders, err := json.Marshal(r.Header)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError,
+		response.RespondWithError(w, http.StatusInternalServerError,
 			"Failed to marshal headers", err)
 		return
 	}
 
 	eventType := r.Header.Get("X-Event-Type")
-	event, err := cfg.db.CreateEvent(r.Context(), database.CreateEventParams{
+	event, err := cfg.DB.CreateEvent(r.Context(), database.CreateEventParams{
 		EndpointID: id,
 		EventType:  sql.NullString{String: eventType, Valid: eventType != ""},
 		Payload:    eventPayload,
 		Headers:    marshaledHeaders,
 	})
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError,
+		response.RespondWithError(w, http.StatusInternalServerError,
 			"Failed to store event", err)
 		return
 	}
 
-	delivery, err := cfg.db.CreateDelivery(r.Context(), database.CreateDeliveryParams{
+	delivery, err := cfg.DB.CreateDelivery(r.Context(), database.CreateDeliveryParams{
 		EventID:   event.ID,
 		TargetUrl: endpoint.TargetUrl,
 		Status:    "pending",
 	})
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError,
+		response.RespondWithError(w, http.StatusInternalServerError,
 			"Failed to create delivery", err)
 		return
 	}
 
-	respondWithJSON(w, http.StatusAccepted, map[string]string{
+	response.RespondWithJSON(w, http.StatusAccepted, map[string]string{
 		"message":     "Event received and delivery queued",
 		"delivery_id": delivery.ID.String(),
 	})

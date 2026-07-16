@@ -1,8 +1,9 @@
-package main
+package handler
 
 import (
 	"database/sql"
 	"encoding/json"
+	response "github.com/CamilleOnoda/webhook-relay.git/internal/response"
 	"net/http"
 	"net/url"
 	"time"
@@ -26,10 +27,11 @@ type Endpoint struct {
 
 // Create a new webhook endpoint for the authenticated user.
 // This is a write operation that modifies data.
-func (cfg *apiConfig) handlerCreateEndpoint(w http.ResponseWriter, r *http.Request) {
+
+func HandleCreateEndpoint(cfg *Config, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodPost {
-		respondWithError(w, http.StatusMethodNotAllowed,
+		response.RespondWithError(w, http.StatusMethodNotAllowed,
 			"Method not allowed", nil)
 		return
 	}
@@ -41,32 +43,32 @@ func (cfg *apiConfig) handlerCreateEndpoint(w http.ResponseWriter, r *http.Reque
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondWithError(w, http.StatusBadRequest,
+		response.RespondWithError(w, http.StatusBadRequest,
 			"Invalid request payload", err)
 		return
 	}
 
 	if req.Name == "" || req.TargetUrl == "" {
-		respondWithError(w, http.StatusBadRequest,
+		response.RespondWithError(w, http.StatusBadRequest,
 			"Name and TargetUrl are required", nil)
 		return
 	}
 
 	validURL, err := url.Parse(req.TargetUrl)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest,
+		response.RespondWithError(w, http.StatusBadRequest,
 			"Invalid target url format", err)
 		return
 	}
 	if validURL.Scheme != "https" {
-		respondWithError(w, http.StatusBadRequest,
+		response.RespondWithError(w, http.StatusBadRequest,
 			"Target url must use HTTPS scheme", nil)
 		return
 	}
 
 	userIDFromToken, ok := r.Context().Value("userID").(uuid.UUID)
 	if !ok {
-		respondWithError(w, http.StatusUnauthorized,
+		response.RespondWithError(w, http.StatusUnauthorized,
 			"Invalid user ID in token", nil)
 		return
 	}
@@ -82,14 +84,14 @@ func (cfg *apiConfig) handlerCreateEndpoint(w http.ResponseWriter, r *http.Reque
 		description = sql.NullString{Valid: false}
 	}
 
-	dbEndpoint, err := cfg.db.CreateEndpoint(r.Context(), database.CreateEndpointParams{
+	dbEndpoint, err := cfg.DB.CreateEndpoint(r.Context(), database.CreateEndpointParams{
 		Name:        req.Name,
 		TargetUrl:   validURL.String(),
 		Description: description,
 		UserID:      userID,
 	})
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to create endpoint in database", err)
+		response.RespondWithError(w, http.StatusInternalServerError, "Failed to create endpoint in database", err)
 		return
 	}
 
@@ -112,7 +114,7 @@ func (cfg *apiConfig) handlerCreateEndpoint(w http.ResponseWriter, r *http.Reque
 		UserID:       userID,
 	}
 
-	generatedURL := cfg.baseURL + "/webhooks" + "/" + dbEndpoint.ID.String()
+	generatedURL := cfg.BaseURL + "/webhooks" + "/" + dbEndpoint.ID.String()
 	responseEndpoint.GeneratedURL = generatedURL
 
 	w.WriteHeader(http.StatusCreated)

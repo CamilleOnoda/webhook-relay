@@ -1,19 +1,20 @@
-package main
+package handler
 
 import (
+	response "github.com/CamilleOnoda/webhook-relay.git/internal/response"
 	"net/http"
 )
 
-func (cfg *apiConfig) handlerGetAllEndpoints(w http.ResponseWriter, r *http.Request) {
+func HandleGetAllEndpoints(cfg *Config, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodGet {
-		respondWithError(w, http.StatusMethodNotAllowed,
+		response.RespondWithError(w, http.StatusMethodNotAllowed,
 			"Method not allowed", nil)
 		return
 	}
-	endpoints, err := cfg.db.GetAllEndpoints(r.Context())
+	endpoints, err := cfg.DB.GetAllEndpoints(r.Context())
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError,
+		response.RespondWithError(w, http.StatusInternalServerError,
 			"failed to list endpoints", err)
 		return
 	}
@@ -28,5 +29,5 @@ func (cfg *apiConfig) handlerGetAllEndpoints(w http.ResponseWriter, r *http.Requ
 			UserName:  endpoint.UserName,
 		})
 	}
-	respondWithJSON(w, http.StatusOK, responseEndpoints)
+	response.RespondWithJSON(w, http.StatusOK, responseEndpoints)
 }

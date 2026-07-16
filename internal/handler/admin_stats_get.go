@@ -1,12 +1,13 @@
-package main
+package handler
 
 import (
+	response "github.com/CamilleOnoda/webhook-relay.git/internal/response"
 	"net/http"
 )
 
-func (cfg *apiConfig) handlerGetAdminStats(w http.ResponseWriter, r *http.Request) {
+func HandleGetAdminStats(cfg *Config, w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		respondWithError(w, http.StatusMethodNotAllowed,
+		response.RespondWithError(w, http.StatusMethodNotAllowed,
 			"Method not allowed", nil)
 		return
 	}
@@ -19,9 +20,9 @@ func (cfg *apiConfig) handlerGetAdminStats(w http.ResponseWriter, r *http.Reques
 		RetryScheduledDeliveries int64 `json:"retry_scheduled_deliveries"`
 	}
 
-	adminStats, err := cfg.db.GetAdminStats(r.Context())
+	adminStats, err := cfg.DB.GetAdminStats(r.Context())
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError,
+		response.RespondWithError(w, http.StatusInternalServerError,
 			"failed to get stats", err)
 		return
 	}
@@ -34,5 +35,5 @@ func (cfg *apiConfig) handlerGetAdminStats(w http.ResponseWriter, r *http.Reques
 		RetryScheduledDeliveries: adminStats.RetryScheduledDeliveries,
 	}
 
-	respondWithJSON(w, http.StatusOK, responseStats)
+	response.RespondWithJSON(w, http.StatusOK, responseStats)
 }

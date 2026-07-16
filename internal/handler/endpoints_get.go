@@ -1,6 +1,7 @@
-package main
+package handler
 
 import (
+	response "github.com/CamilleOnoda/webhook-relay.git/internal/response"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -8,17 +9,18 @@ import (
 
 // Get all endpoints for the authenticated user.
 // This is a read-only operation that does not modify any data.
-func (cfg *apiConfig) handlerGetEndpoints(w http.ResponseWriter, r *http.Request) {
+
+func HandleGetEndpoints(cfg *Config, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodGet {
-		respondWithError(w, http.StatusMethodNotAllowed,
+		response.RespondWithError(w, http.StatusMethodNotAllowed,
 			"Method not allowed", nil)
 		return
 	}
 
 	userIDFromToken, ok := r.Context().Value("userID").(uuid.UUID)
 	if !ok {
-		respondWithError(w, http.StatusUnauthorized,
+		response.RespondWithError(w, http.StatusUnauthorized,
 			"Invalid user ID in token", nil)
 		return
 	}
@@ -27,9 +29,9 @@ func (cfg *apiConfig) handlerGetEndpoints(w http.ResponseWriter, r *http.Request
 		Valid: true,
 	}
 
-	endpoints, err := cfg.db.GetEndpointsByUserID(r.Context(), userID)
+	endpoints, err := cfg.DB.GetEndpointsByUserID(r.Context(), userID)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError,
+		response.RespondWithError(w, http.StatusInternalServerError,
 			"Failed to list endpoints", err)
 		return
 	}
@@ -44,11 +46,11 @@ func (cfg *apiConfig) handlerGetEndpoints(w http.ResponseWriter, r *http.Request
 			IsActive:     endpoint.IsActive,
 			CreatedAt:    endpoint.CreatedAt,
 			UpdatedAt:    endpoint.UpdatedAt,
-			GeneratedURL: cfg.baseURL + "/webhooks/" + endpoint.ID.String(),
+			GeneratedURL: cfg.BaseURL + "/webhooks/" + endpoint.ID.String(),
 			Description:  &endpoint.Description.String,
 			UserID:       endpoint.UserID,
 		})
 	}
 
-	respondWithJSON(w, http.StatusOK, responseEndpoints)
+	response.RespondWithJSON(w, http.StatusOK, responseEndpoints)
 }

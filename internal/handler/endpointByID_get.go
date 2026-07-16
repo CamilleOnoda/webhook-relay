@@ -1,6 +1,7 @@
-package main
+package handler
 
 import (
+	response "github.com/CamilleOnoda/webhook-relay.git/internal/response"
 	"net/http"
 
 	"github.com/CamilleOnoda/webhook-relay.git/internal/database"
@@ -9,16 +10,17 @@ import (
 
 // Get a specific endpoint by its ID for the authenticated user.
 // This is a read-only operation that does not modify any data.
-func (cfg *apiConfig) handlerGetEndpointByID(w http.ResponseWriter, r *http.Request) {
+
+func HandleGetEndpointByID(cfg *Config, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodGet {
-		respondWithError(w, http.StatusMethodNotAllowed,
+		response.RespondWithError(w, http.StatusMethodNotAllowed,
 			"Method not allowed", nil)
 		return
 	}
 	userIDFromToken, ok := r.Context().Value("userID").(uuid.UUID)
 	if !ok {
-		respondWithError(w, http.StatusUnauthorized,
+		response.RespondWithError(w, http.StatusUnauthorized,
 			"Invalid user ID in token", nil)
 		return
 	}
@@ -30,19 +32,19 @@ func (cfg *apiConfig) handlerGetEndpointByID(w http.ResponseWriter, r *http.Requ
 	endpointID := r.PathValue("id")
 	id, err := uuid.Parse(endpointID)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest,
+		response.RespondWithError(w, http.StatusBadRequest,
 			"Invalid uuid format", err)
 		return
 	}
 
-	endpoint, err := cfg.db.GetEndpointByIDAndUserID(r.Context(), database.GetEndpointByIDAndUserIDParams{
+	endpoint, err := cfg.DB.GetEndpointByIDAndUserID(r.Context(), database.GetEndpointByIDAndUserIDParams{
 		ID:     id,
 		UserID: userID,
 	})
 	if err != nil {
-		respondWithError(w, http.StatusForbidden, "endpoint not found", err)
+		response.RespondWithError(w, http.StatusForbidden, "endpoint not found", err)
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, endpoint)
+	response.RespondWithJSON(w, http.StatusOK, endpoint)
 }

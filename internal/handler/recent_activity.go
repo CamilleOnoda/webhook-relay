@@ -1,16 +1,17 @@
-package main
+package handler
 
 import (
+	response "github.com/CamilleOnoda/webhook-relay.git/internal/response"
 	"net/http"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-func (cfg *apiConfig) handlerGetRecentActivity(w http.ResponseWriter, r *http.Request) {
+func HandleGetUserRecentActivity(cfg *Config, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodGet {
-		respondWithError(w, http.StatusMethodNotAllowed,
+		response.RespondWithError(w, http.StatusMethodNotAllowed,
 			"Method not allowed", nil)
 		return
 	}
@@ -20,16 +21,26 @@ func (cfg *apiConfig) handlerGetRecentActivity(w http.ResponseWriter, r *http.Re
 		DeliveryID               uuid.UUID `json:"delivery_id"`
 		ReceivedAt               time.Time `json:"received_at"`
 		EndpointName             string    `json:"endpoint_name"`
-		UserName                 string    `json:"user_name"`
 		EventType                *string   `json:"event_type"`
 		LatestDeliveryStatus     string    `json:"latest_delivery_status"`
 		LatestDeliveryStatusCode *int32    `json:"latest_delivery_status_code"`
 		AttemptCount             int32     `json:"attempt_count"`
 	}
 
-	activities, err := cfg.db.GetAdminRecentActivity(r.Context())
+	userIDFromToken, ok := r.Context().Value("userID").(uuid.UUID)
+	if !ok {
+		response.RespondWithError(w, http.StatusUnauthorized,
+			"Invalid user ID in token", nil)
+		return
+	}
+	userID := uuid.NullUUID{
+		UUID:  userIDFromToken,
+		Valid: true,
+	}
+
+	activities, err := cfg.DB.GetUserRecentActvity(r.Context(), userID)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError,
+		response.RespondWithError(w, http.StatusInternalServerError,
 			"failed to get recent activity", err)
 		return
 	}
@@ -49,12 +60,11 @@ func (cfg *apiConfig) handlerGetRecentActivity(w http.ResponseWriter, r *http.Re
 			DeliveryID:               recentAct.DeliveryID,
 			ReceivedAt:               recentAct.ReceivedAt,
 			EndpointName:             recentAct.EndpointName,
-			UserName:                 recentAct.UserName,
 			EventType:                eventType,
 			AttemptCount:             recentAct.AttemptCount,
 			LatestDeliveryStatus:     recentAct.LatestDeliveryStatus,
 			LatestDeliveryStatusCode: statusCode,
 		})
 	}
-	respondWithJSON(w, http.StatusOK, responseActivity)
+	response.RespondWithJSON(w, http.StatusOK, responseActivity)
 }

@@ -1,6 +1,7 @@
-package main
+package handler
 
 import (
+	response "github.com/CamilleOnoda/webhook-relay.git/internal/response"
 	"net/http"
 
 	"github.com/CamilleOnoda/webhook-relay.git/internal/database"
@@ -9,16 +10,17 @@ import (
 
 // Delete a specific endpoint by ID for the authenticated user.
 // Endpoint: DELETE /endpoints/{id}
-func (cfg *apiConfig) handlerDeleteEndpointByID(w http.ResponseWriter, r *http.Request) {
+
+func HandleDeleteEndpointByID(cfg *Config, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodDelete {
-		respondWithError(w, http.StatusMethodNotAllowed, "Method not allowed", nil)
+		response.RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed", nil)
 		return
 	}
 
 	userIDFromToken, ok := r.Context().Value("userID").(uuid.UUID)
 	if !ok {
-		respondWithError(w, http.StatusUnauthorized,
+		response.RespondWithError(w, http.StatusUnauthorized,
 			"Invalid user ID in token", nil)
 		return
 	}
@@ -30,22 +32,22 @@ func (cfg *apiConfig) handlerDeleteEndpointByID(w http.ResponseWriter, r *http.R
 	endpointID := r.PathValue("id")
 	id, err := uuid.Parse(endpointID)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "invalid UUID format", err)
+		response.RespondWithError(w, http.StatusBadRequest, "invalid UUID format", err)
 		return
 	}
 
-	_, err = cfg.db.GetEndpointByID(r.Context(), id)
+	_, err = cfg.DB.GetEndpointByID(r.Context(), id)
 	if err != nil {
-		respondWithError(w, http.StatusNotFound, "endpoint not found", err)
+		response.RespondWithError(w, http.StatusNotFound, "endpoint not found", err)
 		return
 	}
 
-	err = cfg.db.DeleteEndpointByIDAndUserID(r.Context(), database.DeleteEndpointByIDAndUserIDParams{
+	err = cfg.DB.DeleteEndpointByIDAndUserID(r.Context(), database.DeleteEndpointByIDAndUserIDParams{
 		ID:     id,
 		UserID: userID,
 	})
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to delete endpoint", err)
+		response.RespondWithError(w, http.StatusInternalServerError, "Failed to delete endpoint", err)
 		return
 	}
 

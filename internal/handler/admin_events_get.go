@@ -1,20 +1,21 @@
-package main
+package handler
 
 import (
+	response "github.com/CamilleOnoda/webhook-relay.git/internal/response"
 	"net/http"
 )
 
-func (cfg *apiConfig) handlerGetEvents(w http.ResponseWriter, r *http.Request) {
+func HandleGetEvents(cfg *Config, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodGet {
-		respondWithError(w, http.StatusMethodNotAllowed,
+		response.RespondWithError(w, http.StatusMethodNotAllowed,
 			"Method not allowed", nil)
 		return
 	}
 
-	events, err := cfg.db.GetAllEvents(r.Context())
+	events, err := cfg.DB.GetAllEvents(r.Context())
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError,
+		response.RespondWithError(w, http.StatusInternalServerError,
 			"failed to list events", err)
 		return
 	}
@@ -33,5 +34,5 @@ func (cfg *apiConfig) handlerGetEvents(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	respondWithJSON(w, http.StatusOK, responseEvents)
+	response.RespondWithJSON(w, http.StatusOK, responseEvents)
 }
