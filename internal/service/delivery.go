@@ -107,10 +107,18 @@ func (p *DatabaseDeliveryProcessor) ProcessPendingDeliveries(ctx context.Context
 			nextRetryAt = sql.NullTime{Time: time.Now().Add(nextDelay), Valid: true}
 		} else {
 			deliveryStatus = "dead_letter"
-			log.Printf("Dead-Letter Queue: Delivery %s moving to dead_letter. Reason: code=%d, err=%v",
-				delivery.ID, statusCode, result.ErrorMessage.String)
 		}
 
+		errorMessage := ""
+		if deliveryErr != nil {
+			errorMessage = deliveryErr.Error()
+		} else if result.ErrorMessage.Valid {
+			errorMessage = result.ErrorMessage.String
+		}
+		nextRetry := "none"
+		if nextRetryAt.Valid {
+			nextRetry = nextRetryAt.Time.Format(time.RFC3339)
+		}
 		err = p.db.UpdateDeliveryState(ctx, database.UpdateDeliveryStateParams{
 			ID:                 delivery.ID,
 			Status:             deliveryStatus,
@@ -122,8 +130,13 @@ func (p *DatabaseDeliveryProcessor) ProcessPendingDeliveries(ctx context.Context
 			DeliveryDurationMs: result.DeliveryDurationMs,
 		})
 		if err != nil {
-			log.Printf("failed to update delivery %s in DB: %v", delivery.ID, err)
+			log.Printf("delivery attempt state update failed: delivery_id=%s | endpoint=%q | attempt=%d | intended_status=%s | http=%d | error=%q | retry=%s | persisted=false | db_error=%v",
+				delivery.ID, delivery.TargetUrl, currentAttempt, deliveryStatus, statusCode, errorMessage, nextRetry, err)
+			continue
 		}
+
+		log.Printf("delivery attempt completed: delivery_id=%s | endpoint=%q | attempt=%d | status=%s | http=%d | error=%q | retry=%s | persisted=true",
+			delivery.ID, delivery.TargetUrl, currentAttempt, deliveryStatus, statusCode, errorMessage, nextRetry)
 	}
 }
 
