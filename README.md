@@ -1,27 +1,29 @@
 # Webhook Relay Service
 
 <p align="center">
-  <img src="assets/system-overview.png" width="600">
+  <img src="assets/system-overview.png" width="500">
 </p>
-An automated post office for HTTP messages. The relay receives webhook events, stores them, delivers them asynchronously, automatically retries transient failures using exponential backoff, and exposes delivery status through user and admin dashboards. Built in Go to explore reliable event delivery, authentication, background workers, and backend system design.
+An automated post office for HTTP messages. The relay receives and persists webhook events, delivers them asynchronously, and automatically retries transient failures using exponential backoff with jitter. Delivery state is persisted across restarts, exhausted deliveries are moved to a dead-letter queue, and delivery activity can be inspected and replayed through user and admin dashboards.
+
+Built in Go with PostgreSQL, with a focus on reliable event delivery, failure handling, observability, and operating and troubleshooting the service in a Linux environment.
 
 ---
 
-## Repository Highlights
+## Repository highlights
 
-- 🚀 **Asynchronous webhook delivery** — incoming webhooks are accepted quickly, while delivery processing happens in the background.
-- 🔄 **Automatic retries with exponential backoff** — failed deliveries are rescheduled instead of being lost immediately.
-- 🔐 **JWT + refresh token authentication** — users stay authenticated with short-lived access tokens and secure refresh cookies.
-- 📊 **User & admin monitoring dashboards** — delivery status, retries, dead letters, endpoints, and users can be inspected from the UI.
+- **Asynchronous webhook delivery** — incoming webhooks are accepted quickly, while delivery processing happens in the background.
+- **Automatic retries with exponential backoff** — failed deliveries are rescheduled instead of being lost immediately.
+- **JWT + refresh token authentication** — users stay authenticated with short-lived access tokens and secure refresh cookies.
+- **User & admin monitoring dashboards** — delivery status, retries, dead letters, endpoints, and users can be inspected from the UI.
 
 ---
 
-# Live Demo
+# Live demo
 Try the deployed application:
 
 👉 https://webhook-relay-production-5e97.up.railway.app/
 
-### Demo Credentials
+### Demo credentials
 
 Use the demo credentials below to explore the application safely.
 The admin dashboard displays registered user emails, so please avoid using a personal email address when testing.
@@ -44,7 +46,7 @@ That simple idea became an opportunity to explore authentication, background wor
 
 ---
 
-# Table of Contents
+# Table of contents
 
 - [Motivation](#motivation)
 - [Screenshots](#screenshots)
@@ -56,7 +58,7 @@ That simple idea became an opportunity to explore authentication, background wor
 - [Quick Start](#quick-start)
 - [Usage](#usage)
 - [What I Learned](#what-i-learned)
-- [Future Improvements](#future-improvements)
+- [Next engineering focus](#next-engineering-focus)
 - [Deployment](#deployment)
 - [Contributing](#contributing)
 - [License](#license)
@@ -90,7 +92,7 @@ That simple idea became an opportunity to explore authentication, background wor
   </tr>
 </table>
 
-### Delivery Lifecycle
+### Delivery lifecycle
 
 Successful deliveries, scheduled retries, and dead-lettered events can be inspected individually.
 
@@ -115,20 +117,20 @@ Successful deliveries, scheduled retries, and dead-lettered events can be inspec
 
 # Features
 
-## Webhook Management
+## Webhook management
 - Create and manage webhook endpoints
 - Generate unique webhook URLs
 - Store endpoint metadata in PostgreSQL
 - Delete endpoints and associated data
 
-## Event Processing
+## Event @rocessing
 - Receive incoming webhook events
 - Store payloads and metadata
 - Filter unsafe transport headers
 - Forward requests to destination services
 - Track delivery status and response codes
 
-## Reliable Delivery
+## Reliable delivery
 - Automatic retry scheduling
 - Exponential backoff
 - Retry jitter to prevent retry storms
@@ -137,7 +139,7 @@ Successful deliveries, scheduled retries, and dead-lettered events can be inspec
 - Dead-letter replay
 - Worker recovery after restarts
 
-## Authentication & Authorization
+## Authentication & authorization
 - User registration and login
 - Argon2id password hashing
 - JWT access tokens
@@ -149,7 +151,7 @@ Successful deliveries, scheduled retries, and dead-lettered events can be inspec
 
 ## Dashboard
 
-### User Dashboard
+### User dashboard
 - Endpoint management
 - Event history
 - Delivery history
@@ -158,7 +160,7 @@ Successful deliveries, scheduled retries, and dead-lettered events can be inspec
 - Dead-letter metrics
 - Delivery status tracking
 
-### Admin Dashboard
+### Admin dashboard
 - System-wide statistics
 - User management
 - Endpoint overview
@@ -169,7 +171,7 @@ Successful deliveries, scheduled retries, and dead-lettered events can be inspec
 - Dead-letter replay
 - Attempt count monitoring
 
-## Implementation Details
+## Implementation details
 ### Header filtering
 Before forwarding requests, the relay removes hop-by-hop headers such as:
 
@@ -217,7 +219,7 @@ flowchart TD
     Worker -->|Record Success / Failure| DB
 ```
 
-## Delivery Lifecycle
+## Delivery lifecycle
 ```mermaid
 flowchart TD
     A[Webhook Received] --> B[Pending Delivery]
@@ -234,7 +236,7 @@ flowchart TD
     G -->|Admin Replay| B
 ```
 
-## Session Flow
+## Session flow
 
 Login creates two credentials:
 
@@ -287,7 +289,7 @@ This allows sessions to remain active without repeatedly prompting users to log 
 
 ---
 
-# Project Structure
+# Project structure
 
 ```text
 internal/
@@ -308,7 +310,7 @@ README.md
 
 ---
 
-# Quick Start
+# Quick start
 ## Prerequisites
 
 - Go
@@ -376,7 +378,7 @@ http://localhost:8080
 ---
 
 # Usage
-## Create an Account
+## Create an account
 ```
 POST /api/users
 ```
@@ -390,7 +392,7 @@ Returns:
 - JWT access token
 - Refresh token cookie
 
-## Create a Webhook Endpoint
+## Create a webhook endpoint
 ```
 POST /api/endpoints
 ```
@@ -403,7 +405,7 @@ Response:
 }
 ```
 
-## Send a Test Webhook
+## Send a test webhook
 There are two ways to generate webhook events:
 
 - Click **Send Test** from the User Dashboard.
@@ -415,7 +417,7 @@ curl -X POST http://localhost:8080/webhooks/{endpoint_id} \
 -d '{"type":"payment.success"}'
 ```
 
-## Inspect Results
+## Inspect results
 ```
 GET /api/events
 GET /api/deliveries
@@ -428,7 +430,7 @@ GET /api/deliveries
 - Response status codes
 - Retry status
 
-## Admin Dashboard
+## Admin dashboard
 Administrators can access:
 
 - System statistics
@@ -437,7 +439,7 @@ Administrators can access:
 - Recent activity
 - Dead-letter queue inspection
 
-### Admin API Routes
+### Admin API routes
 ```
 GET /admin/stats
 GET /admin/users
@@ -447,140 +449,151 @@ GET /admin/recent-activity
 
 ---
 
-# What I Learned
+# What I learned
 
-Building this project helped me gain hands-on experience with:
+The biggest lesson from this project was that reliability changes the architecture of an application.
 
-**Backend**
-- REST API design
-- Authentication
-- Session management
+The first version of the relay could have simply received a webhook and forwarded it immediately. Once I wanted deliveries to survive temporary failures, however, the problem became much more interesting.
 
-**Reliability**
-- Retry strategies
-- Dead-letter queues
-- Background workers
+Events needed to be persisted before delivery. Delivery attempts needed their own state. Failed requests had to be scheduled for later rather than retried immediately, and retry information had to survive application restarts.
 
-**Infrastructure**
-- Railway
-- PostgreSQL
-- Goose
-- sqlc
+This led me to work through questions such as:
+
+- What happens to a delivery if the application stops after receiving the event?
+- Which state needs to be persisted rather than kept in memory?
+- How does a worker know which deliveries are ready to be attempted?
+- How should temporary failures differ from permanently failed deliveries?
+- How can retries avoid repeatedly hammering an unhealthy destination?
+- How can failed deliveries be replayed without creating a separate delivery path?
+
+Working through those problems led to the current design: persisted events and delivery state, background workers, exponential backoff with jitter, dead-letter handling, and a replay mechanism that sends failed deliveries back through the normal delivery lifecycle.
+
+The project also gave me practical experience with authentication and session management using short-lived JWT access tokens and refresh tokens, PostgreSQL-backed application state, database migrations, generated queries with sqlc, and deploying a Go application with a production database.
+
+More importantly, it changed how I think about backend systems. A successful HTTP request is only one part of the problem; I also need to think about what happens when dependencies are slow, unavailable, or when the application itself restarts.
 
 ---
 
-# Future Improvements
+# Next engineering focus
 
-## Authentication and session management
+The core delivery workflow is implemented, so the next phase of the project is less about adding application features and more about understanding how the service behaves while it is running.
 
-- Refresh token rotation
-- Multiple concurrent sessions
-- Logout from all devices
-- Session management dashboard
+**Observability**
 
-## Security
+- Introduce structured application logging
+- Expose application and delivery metrics
+- Collect metrics with Prometheus
+- Visualize system behaviour with Grafana
+- Track delivery success/failure rates, retries, dead letters, and worker activity
+
+**Linux deployment and operations**
+
+Run the service in an Ubuntu environment and use it as a small production-like system for practising:
+- Process and service management
+- Networking and port troubleshooting
+- PostgreSQL connectivity
+- Application logs
+- Resource monitoring
+- Service startup and recovery
+- Failure diagnosis
+
+**Failure testing**
+
+Deliberately introduce failures and investigate them from the system rather than only from the application code.
+
+Examples include:
+- Destination endpoint unavailable
+- Destination endpoint returning 5xx responses
+- PostgreSQL unavailable
+- Network or DNS failure
+- Delivery worker stopped unexpectedly
+- Application restart with pending deliveries
+- Resource or disk pressure
+
+The goal is to observe how failures appear across logs, metrics, processes, networking, the database, and the delivery lifecycle, then diagnose the problem from those signals.
+
+**Security**
 
 - Webhook signatures
 - Endpoint secrets
-- Enhanced request validation
+- Stronger request validation
 
-## Scalability
+**Possible future architecture experiments**
+
+As the project grows, I may also use it to experiment with alternative approaches such as:
 
 - Queue-based delivery processing
 - Worker pools
-- Rate limiting
 - Concurrency controls
+- Rate limiting
 
-## Observability
-
-- Structured logging
-- Metrics
-- Alerting
-- Delivery analytics
-
-## API improvements
-
-- Event filtering by type
-- Pagination
-- Search and filtering events, endpoints, or delivery attempts
-
----
-
-# Deployment
-
-The service is deployed using:
-
-- Railway
-- PostgreSQL
-- Goose migrations
-
-The deployment process included:
-
-- Environment variable configuration
-- Production database migrations
-- Public API routing
-- Frontend/backend integration
-- Git history recovery and safe force-pushing
+These are potential architectural experiments rather than requirements for the current implementation.
 
 ---
 
 # Contributing
 
-Contributions, suggestions, and bug reports are welcome.
+Contributions are very welcome!
 
-If you would like to contribute:
+This project started as a way for me to explore reliable webhook delivery, but I'd love for it to become something other people can experiment with, improve, and learn from too.
 
-1. Fork the repository
-2. Create a feature branch
+There are many ways to contribute, including:
 
-```bash
-git checkout -b feature/my-feature
-```
+- Fixing bugs
+- Improving tests
+- Improving documentation
+- Improving logging and observability
+- Suggesting or investigating reliability edge cases
+- Improving development or deployment tooling
+- Opening an issue with an idea or unexpected behaviour you found
 
-3. Make your changes
-4. Run tests and verify the application works correctly
-5. Commit your changes
+You don't need to take on a large feature. Small fixes, tests, documentation improvements, and discussions are just as welcome.
 
-```bash
-git commit -m "feat: add my feature"
-```
+If you're interested in contributing but aren't sure where to start, feel free to open an issue or look through the existing issues.
 
-6. Push your branch
+**Making a Contribution**
 
-```bash
-git push origin feature/my-feature
-```
+1. Fork the repository and create a branch:
 
-7. Open a Pull Request
+`git switch -c fix/my-change`
 
-## Development Guidelines
+2. Make your changes.
+3. Run the tests and verify the application still works as expected.
+4. Format Go code:
 
-- Follow standard Go formatting:
+`go fmt ./...`
 
-```bash
-go fmt ./...
-```
-- Keep handlers focused on HTTP concerns
-- Keep business logic inside service packages
-- Add migrations for database schema changes
-- Regenerate sqlc code after query updates:
+5. Commit and push your changes, then open a Pull Request describing what you changed and why.
 
-```bash
-sqlc generate
-```
+**Development Guidelines**
 
-- Include tests when appropriate
+A few guidelines to keep the codebase consistent:
 
-## Reporting Issues
+- Keep handlers focused on HTTP concerns.
+- Keep business logic inside service packages.
+- Add migrations for database schema changes.
+- Regenerate sqlc code after modifying queries:
 
-If you find a bug or have a feature request, please open an issue describing:
+`sqlc generate`
 
-- Expected behavior
-- Actual behavior
-- Steps to reproduce
+- Add or update tests when the change affects existing behaviour.
+- Keep changes focused. A small PR that solves one problem is easier to review than several unrelated changes bundled together.
+
+If you're considering a larger architectural change, opening an issue first is encouraged so we can discuss the approach before you spend time implementing it.
+
+**Reporting bugs and suggesting improvements**
+
+Issues are welcome too.
+
+For bugs, include whatever information you have that could help reproduce or understand the problem:
+
+- What you expected to happen
+- What actually happened
+- Steps to reproduce it
 - Relevant logs or screenshots
+- Your environment, when relevant
 
-All constructive feedback is appreciated.
+Ideas, questions, reliability edge cases, and suggestions for improving the project are also welcome. You don't need to already have a solution before opening an issue.
 
 ---
 
