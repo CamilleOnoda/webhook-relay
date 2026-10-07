@@ -25,15 +25,17 @@ Try the deployed application:
 
 ### Demo credentials
 
-Use the demo credentials below to explore the application safely.
-The admin dashboard displays registered user emails, so please avoid using a personal email address when testing.
+Use this shared account to explore the application. 
+
+Please use sample data only.
+
+This account is shared with other visitors. Its data may change.
 
 | Role | Email | Password |
 |------|-------|----------|
 | Admin | admin@demo.com | password1234 |
 | User | user@demo.com | password1234 |
 
-You can also register your own account if you'd like to test the registration flow.
 
 ---
 
