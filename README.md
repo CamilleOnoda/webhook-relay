@@ -125,7 +125,7 @@ Successful deliveries, scheduled retries, and dead-lettered events can be inspec
 - Store endpoint metadata in PostgreSQL
 - Delete endpoints and associated data
 
-## Event @rocessing
+## Event processing
 - Receive incoming webhook events
 - Store payloads and metadata
 - Filter unsafe transport headers
